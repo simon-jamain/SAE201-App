@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMELI Data – Accueil</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+  <main>
+    <h1 style="font-size:2.5rem; margin-bottom:16px;">Bienvenue sur AMELI Data</h1>
+    <p style="font-size:1.125rem; color:#4b5563; margin-bottom:32px;">
+      Explorez les données de santé publique de l'Assurance Maladie à travers des visualisations interactives.
+    </p>
+    <div class="cards-grid">
+      <a class="card" href="{{ url_for('accueil.pathologies') }}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+        <h2>Pathologies</h2>
+        <p>Explorez les données sur les différentes pathologies et maladies chroniques.</p>
+      </a>
+      <a class="card" href="{{ url_for('accueil.acces_soins') }}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+        <h2>Accès aux soins</h2>
+        <p>Visualisez l'accessibilité aux soins de santé par région.</p>
+      </a>
+      <a class="card" href="{{ url_for('accueil.professionnels') }}">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+        <h2>Professionnels de santé</h2>
+        <p>Consultez les statistiques sur les professionnels de santé libéraux.</p>
+      </a>
+      <div class="card" style="cursor:default;">
+        <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+        <h2>Analyses avancées</h2>
+        <p>Tableaux, graphiques et cartes interactives pour analyser les données.</p>
+      </div>
+    </div>
+  </main>
+</body>
+</html>
