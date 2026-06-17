@@ -16,15 +16,31 @@
         <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
       </svg>
       <span>AMELI Data</span>
+
+      {# ── Zone connexion (encadré du header) ── #}
+      <div class="header-auth">
+        {% if session.get('utilisateur') %}
+          <a href="{{ url_for('auth.espace') }}" class="header-link">Mon espace</a>
+          <a href="{{ url_for('auth.deconnexion') }}" class="header-link">Déconnexion</a>
+        {% else %}
+          <a href="{{ url_for('auth.connexion') }}" class="btn-connexion">Se connecter</a>
+        {% endif %}
+      </div>
     </div>
   </header>
+
   <div class="nav-gap"></div>
+
   <nav>
     <div class="nav-inner">
       <div class="nav-list">
         <a href="{{ url_for('accueil.index') }}" class="{% if request.endpoint == 'accueil.index' %}active{% endif %}">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
           Accueil
+        </a>
+        <a href="{{ url_for('accueil.presentation') }}" class="{% if request.endpoint == 'accueil.presentation' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Présentation d'AMELI
         </a>
         <a href="{{ url_for('dashboard.medicaments') }}" class="{% if request.endpoint == 'dashboard.medicaments' %}active{% endif %}">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
@@ -33,6 +49,14 @@
         <a href="{{ url_for('dashboard.pathologies') }}" class="{% if request.endpoint == 'dashboard.pathologies' %}active{% endif %}">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
           Pathologies
+        </a>
+        <a href="{{ url_for('honoraires.afficher') }}" class="{% if request.endpoint == 'honoraires.afficher' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+          Honoraires
+        </a>
+        <a href="{{ url_for('accueil.acces_soins') }}" class="{% if request.endpoint == 'accueil.acces_soins' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Accès aux soins
         </a>
         <a href="{{ url_for('dashboard.professionnels') }}" class="{% if request.endpoint == 'dashboard.professionnels' %}active{% endif %}">
           <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>

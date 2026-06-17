@@ -76,6 +76,7 @@ nav, .primary-nav {
 }
 
 main { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
+footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; font-size: 0.875rem; text-align: center; }
 
 .btn {
   display: inline-flex;
@@ -112,6 +113,22 @@ main { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
 .btn-ghost:focus-visible {
   background: rgba(30, 58, 138, 0.08);
 }
+
+.btn-espace {
+  background: transparent; color: #fff; padding: 8px 18px; border-radius: 8px;
+  font-size: .875rem; font-weight: 600; text-decoration: none;
+  border: 1px solid #4ade80;
+  transition: background .15s;
+}
+.btn-espace:hover { background: rgba(74, 222, 128, 0.15); }
+
+.btn-deconnexion {
+  background: transparent; color: #fff; padding: 8px 18px; border-radius: 8px;
+  font-size: .875rem; font-weight: 600; text-decoration: none;
+  border: 1px solid #f87171;
+  transition: background .15s;
+}
+.btn-deconnexion:hover { background: rgba(248, 113, 113, 0.15); }
 
 .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
 @media (max-width: 640px) { .cards-grid { grid-template-columns: 1fr; } }
@@ -288,3 +305,95 @@ main { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
 .legend-bar { height: 16px; width: 256px; border-radius: 9999px; background: linear-gradient(to right, rgb(0,100,255), rgb(255,100,0)); }
 .map-range { text-align: center; font-size: 0.8rem; color: #6b7280; margin-top: 8px; }
 .map-note { font-size: 0.8rem; color: #9ca3af; text-align: center; margin-top: 16px; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   AUTHENTIFICATION (fusionné depuis auth.css)
+   Zone de connexion (header) + pages connexion / création de compte
+   ═══════════════════════════════════════════════════════════════════════ */
+
+/* ── Zone connexion dans le header ── */
+.header-auth        { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.header-user        { font-size: .875rem; opacity: .9; }
+.header-auth .header-link { color: #fff; text-decoration: none; font-size: .875rem; opacity: .9; }
+.header-auth .header-link:hover { opacity: 1; text-decoration: underline; }
+
+.btn-connexion {
+  background: #fff; color: #1e3a8a; padding: 8px 18px; border-radius: 8px;
+  font-size: .875rem; font-weight: 600; text-decoration: none;
+  transition: background .15s;
+}
+.btn-connexion:hover { background: #e0e7ff; }
+
+/* ── Bouton primaire DANS les formulaires d auth (scopé pour ne pas
+      écraser le .btn-primary global en forme de pilule) ── */
+.auth-form .btn-primary {
+  width: 100%; padding: 12px; margin-top: 8px;
+  background: #1e3a8a; color: #fff; border: none; border-radius: 8px;
+  font-size: .95rem; font-weight: 600; cursor: pointer;
+  transition: background .15s;
+}
+.auth-form .btn-primary:hover { background: #1e40af; }
+
+/* ── Pages connexion / création de compte ── */
+.auth-box { max-width: 420px; }
+
+.auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-field label { font-weight: 600; font-size: .875rem; }
+.auth-field input {
+  padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: .95rem;
+}
+.auth-field input:focus { outline: 2px solid #93c5fd; outline-offset: 1px; border-color: #1e3a8a; }
+
+.auth-error {
+  background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+  padding: 10px 14px; border-radius: 6px; font-size: .875rem; margin-top: 12px;
+}
+
+.auth-switch { margin-top: 20px; font-size: .875rem; color: #6b7280; text-align: center; }
+.auth-switch a { color: #1e40af; font-weight: 600; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }
+
+
+/* ═══════════════════════════════════════════════════════════════════════
+   HONORAIRES (fusionné depuis honoraires.css)
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.page-title  { font-size: 2rem; margin-bottom: 24px; }
+.viz-hint    { font-size: .8rem; color: #6b7280; margin: 12px 0 0; text-align: center; }
+.num         { text-align: right; }
+.results h2  { margin-top: 0; }
+
+/* Utilitaires (remplacent les anciens style="..." inline) */
+.is-hidden     { display: none; }
+.table-scroll  { overflow-x: auto; }
+.pagination-bar            { display: flex; gap: 8px; justify-content: center; margin-top: 12px; flex-wrap: wrap; }
+.pagination-bar .viz-btn   { min-width: 36px; }
+
+/* Bouton « Afficher » — cohérent avec la palette bleue du site */
+.btn-afficher {
+  margin-top: 16px;
+  padding: 10px 28px;
+  background: #1e3a8a;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  font-size: .9rem;
+  font-weight: 600;
+  cursor: pointer;
+  box-shadow: 0 2px 6px rgba(30, 58, 138, .25);
+  transition: background .15s, transform .15s, box-shadow .15s;
+}
+.btn-afficher:hover {
+  background: #1e40af;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(30, 58, 138, .30);
+}
+.btn-afficher:active {
+  transform: translateY(0);
+  box-shadow: 0 2px 6px rgba(30, 58, 138, .25);
+}
+.btn-afficher:focus-visible {
+  outline: 2px solid #93c5fd;
+  outline-offset: 2px;
+}

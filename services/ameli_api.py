@@ -28,6 +28,19 @@ class AmeliAPI:
 
     BASE_URL = "https://data.ameli.fr/api/explore/v2.1/catalog/datasets"
 
+    # Correspondances de libellés pour le dataset honoraires (certaines
+    # professions y sont nommées différemment des autres datasets).
+    _CORRESPONDANCES_HONORAIRES = {
+        "Médecins généralistes (hors médecins à expertise particulière)":
+            "Médecins généralistes (hors médecins à expertise particulière - MEP)",
+        "Chirurgiens-dentistes spécialistes d'orthopédie dento-faciale":
+            "Chirurgiens-dentistes spécialistes d'orthopédie dento-faciale (ODF)",
+    }
+
+    # Plafonds imposés par l'endpoint "records" de l'API Explore v2.1
+    _PAGE_MAX   = 100     # nombre max de lignes par requête
+    _OFFSET_MAX = 10000   # offset + limit doit rester <= 10000
+
     def __init__(self, timeout=30):
         self._timeout = timeout
         self._session = requests.Session()
@@ -177,75 +190,364 @@ class AmeliAPI:
              "where": where, "limit": 20},
         )
 
+    # ── Pathologies ────────────────────────────────────────────────────────
 
-# ── Méthode privée ─────────────────────────────────────────────────────
+    def get_pathology_labels(self, annee=None):
+        """Liste des pathologies disponibles dans l'API AMELI."""
+        clauses = [
+            'cla_age_5="tsage"',
+            'sexe="9"',
+            'niveau_prioritaire="1"',
+            'dept!="999"',
+        ]
+        if annee:
+            clauses.append(f"year(annee)={annee}")
+
+        results = self._requete(
+            "effectifs",
+            {
+                "select": "patho_niv1",
+                "group_by": "patho_niv1",
+                "where": " AND ".join(clauses),
+                "limit": 500,
+            },
+        ) or []
+        labels = sorted({r.get("patho_niv1") for r in results if r.get("patho_niv1")})
+        return labels
+
+    def get_pathologies(self, annee=None, pathologie="all", region=None, departement=None, limit=5000):
+        """Récupère et agrège les données des pathologies."""
+        clauses = [
+            'cla_age_5="tsage"',
+            'sexe="9"',
+            'niveau_prioritaire="1"',
+            'dept!="999"',
+        ]
+        if annee:
+            clauses.append(f"year(annee)={annee}")
+        if pathologie and pathologie != "all":
+            safe_patho = pathologie.replace('"', '\\"')
+            clauses.append(f'patho_niv1="{safe_patho}"')
+        if region:
+            clauses.append(f'region="{region}"')
+        if departement:
+            clauses.append(f'dept="{departement}"')
+
+        raw = self._requete(
+            "effectifs",
+            {
+                "select": "annee,region,dept,patho_niv1,ntop,npop,prev",
+                "where": " AND ".join(clauses),
+                "limit": limit,
+            },
+        ) or []
+
+        aggregates = {}
+        for row in raw:
+            key = (
+                row.get("annee"),
+                row.get("region"),
+                row.get("dept"),
+                row.get("patho_niv1"),
+            )
+            if key not in aggregates:
+                aggregates[key] = {
+                    "annee": row.get("annee"),
+                    "region": row.get("region"),
+                    "departement": row.get("dept"),
+                    "pathologie": row.get("patho_niv1"),
+                    "nombre_patients": 0.0,
+                    "populations": 0.0,
+                    "prev_weighted": 0.0,
+                }
+
+            nombre = row.get("ntop")
+            prev   = row.get("prev")
+            pop    = row.get("npop")
+            try:
+                nombre = float(nombre)
+            except (TypeError, ValueError):
+                nombre = 0.0
+            try:
+                pop = float(pop) if pop is not None else 0.0
+            except (TypeError, ValueError):
+                pop = 0.0
+            try:
+                prev = float(prev) if prev is not None else 0.0
+            except (TypeError, ValueError):
+                prev = 0.0
+
+            aggregates[key]["nombre_patients"] += nombre
+            if pop > 0:
+                aggregates[key]["prev_weighted"] += prev * pop
+                aggregates[key]["populations"]   += pop
+            else:
+                aggregates[key]["prev_weighted"] += prev * nombre
+                aggregates[key]["populations"]   += nombre
+
+        results = []
+        for agg in aggregates.values():
+            prevalence = 0.0
+            if agg["populations"]:
+                prevalence = 100.0 * agg["prev_weighted"] / agg["populations"]
+            results.append({
+                "annee":           agg["annee"],
+                "region":          agg["region"],
+                "departement":     agg["departement"],
+                "pathologie":      agg["pathologie"],
+                "nombre_patients": agg["nombre_patients"],
+                "taux_prevalence": round(prevalence, 2),
+            })
+
+        return sorted(
+            results,
+            key=lambda item: (
+                item["region"],
+                item["departement"],
+                item["pathologie"] or "",
+            ),
+        )
+
+    # ── Honoraires ─────────────────────────────────────────────────────────
+
+    def get_honoraires(self, profession, departement_code, annee):
+        """Honoraires détaillés pour une profession, un département et une année.
+
+        group_by supprimé : l'API refuse year() + group_by combinés (erreur 400).
+        Les filtres where suffisent à éviter les doublons sur ce dataset.
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'departement="{departement_code}" AND '
+            f'year(annee)={annee} AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires IS NOT NULL'
+        )
+        return self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "year(annee) as annee,"
+                    "type_honoraires_niveau_1,"
+                    "type_honoraires_niveau_2,"
+                    "type_honoraires_niveau_3,"
+                    "montant_honoraires,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "order_by": (
+                    "honoraires_ordre_niv_1,"
+                    "honoraires_ordre_niv_2,"
+                    "honoraires_ordre_niv_3"
+                ),
+                "limit": 100,
+            },
+        )
+
+    def get_evolution_honoraires(self, profession, departement_code):
+        """Évolution du montant total des honoraires sur toutes les années.
+
+        group_by supprimé : même raison que get_honoraires().
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'departement="{departement_code}" AND '
+            f'type_honoraires_niveau_1="Ensemble des honoraires" AND '
+            f'type_honoraires_niveau_2 IS NULL AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires_moyens IS NOT NULL'
+        )
+        return self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "year(annee) as annee,"
+                    "montant_honoraires,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "order_by": "annee",
+                "limit": 100,
+            },
+        )
+
+    def get_evolution_comparaison(self, profession, departement_1, departement_2, type_honoraires_niv1):
+        """Comparaison de l'évolution entre deux départements.
+
+        group_by supprimé : même raison que get_honoraires().
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'(departement="{departement_1}" OR departement="{departement_2}") AND '
+            f'type_honoraires_niveau_1="{type_honoraires_niv1}" AND '
+            f'type_honoraires_niveau_2 IS NULL AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires_moyens IS NOT NULL'
+        )
+        return self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "year(annee) as annee,"
+                    "departement,"
+                    "libelle_departement,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "order_by": "annee,departement",
+                "limit": 200,
+            },
+        )
+
+    def get_classement_departements(self, profession, annee):
+        """Classement des départements par montant moyen.
+
+        group_by conservé ici car pas de year() dans le select — pas de conflit.
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'year(annee)={annee} AND '
+            f'type_honoraires_niveau_1="Ensemble des honoraires" AND '
+            f'type_honoraires_niveau_2 IS NULL AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires_moyens IS NOT NULL'
+        )
+        resultats = self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "departement,"
+                    "libelle_departement,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "group_by": (
+                    "departement,"
+                    "libelle_departement,"
+                    "montant_honoraires_moyens"
+                ),
+                "limit": 200,
+            },
+        ) or []
+        def cle_tri(r):
+            try:
+                return float(r.get("montant_honoraires_moyens") or 0)
+            except (TypeError, ValueError):
+                return 0.0
+        return sorted(resultats, key=cle_tri, reverse=True)
+
+    # ── Médicaments & Actes (Open Medic / Open Damir) ──────────────────────
+
+    def get_medicaments(self, annee, poste_id=None, limit=50):
+        # On interroge le catalogue global pour voir les vrais IDs disponibles
+        url_catalogue = "https://data.ameli.fr/api/explore/v2.1/catalog/datasets?where=prescriptions&limit=10"
+        try:
+            reponse = self._session.get(url_catalogue, timeout=self._timeout)
+            if reponse.status_code == 200:
+                datasets = reponse.json().get('datasets', [])
+                print("\n═════════════ DATASETS TROUVÉS SUR AMELI ═════════════")
+                for d in datasets:
+                    print(f"ID ÉCRIT POUR LE CODE -> : {d.get('dataset_id')}")
+                    print(f"Titre affiché sur le site : {d.get('metas', {}).get('default', {}).get('title')}\n")
+                print("══════════════════════════════════════════════════════\n")
+        except Exception as e:
+            print(f"Erreur lors du scan du catalogue : {e}")
+
+        # En attendant que tu lises le terminal, on renvoie une liste vide
+        # pour éviter l'erreur 503 et laisser ton formulaire s'afficher !
+        return []
+
+    # ── Méthode privée : requête HTTP avec pagination + cache + retry ──────
 
     def _requete(self, dataset, params):
-        """
-        Exécute un appel GET vers l'API ameli.fr avec mise en cache TTL 24 h.
-        Utilise l'architecture moderne v2.1 standard d'OpenDataSoft.
-        """
-        key = _cache_key(dataset, params)
+        """Exécute un appel GET vers l'API ameli.fr (API Explore v2.1).
 
+        Combine trois mécaniques :
+          • Pagination ``limit``/``offset`` par pages de 100 (l'API v2.1 refuse
+            ``rows``/``start`` de l'ancienne v1 : les envoyer provoque un 400).
+          • Cache TTL 24 h (les données ameli.fr sont publiées annuellement).
+          • Retry automatique (configuré sur la session dans __init__).
+
+        Retourne la liste des enregistrements en cas de succès, ou ``None`` en
+        cas d'échec réseau / HTTP. Le ``None`` permet aux contrôleurs de
+        distinguer « API en panne » (page d'erreur 503) de « aucun résultat »
+        (liste vide).
+        """
+        # Le cache porte sur la requête logique complète (avant pagination).
+        key = _cache_key(dataset, params)
         with _cache_lock:
             cached = _cache.get(key)
-
         if cached is not None:
             logger.debug("[AmeliAPI] Cache HIT  — %s", dataset)
             return cached
 
         logger.debug("[AmeliAPI] Cache MISS — %s", dataset)
 
-        # URL officielle et unique v2.1 pour TOUS les datasets (sans distinction)
-        url = f"{self.BASE_URL}/{dataset}/records"
+        url    = f"{self.BASE_URL}/{dataset}/records"
+        params = params.copy()
 
-        try:
-            resp = self._session.get(url, params=params, timeout=self._timeout)
-            resp.raise_for_status()
-            
-            # En v2.1, les résultats sont TOUJOURS dans la clé "results"
-            data = resp.json().get("results", [])
+        # Nombre total de lignes souhaité (None = pas de limite explicite)
+        total_voulu = None
+        for cle in ("limit", "rows"):          # "rows" toléré par compat. ascendante
+            if cle in params:
+                try:
+                    total_voulu = int(params.pop(cle))
+                except (TypeError, ValueError):
+                    total_voulu = None
+                break
+        params.pop("start", None)               # jamais envoyé à l'API v2.1
 
-        except requests.exceptions.Timeout:
-            logger.error("[AmeliAPI] Timeout sur %s (>%ds)", dataset, self._timeout)
-            return None
-        except requests.exceptions.ConnectionError as e:
-            logger.error("[AmeliAPI] Connexion impossible sur %s : %s", dataset, e)
-            return None
-        except requests.exceptions.HTTPError as e:
-            logger.error("[AmeliAPI] HTTP %s sur %s : %s",
-                         e.response.status_code if e.response else "?", dataset, e)
-            return None
-        except requests.RequestException as e:
-            logger.error("[AmeliAPI] Erreur sur %s : %s: %s", dataset, type(e).__name__, e)
-            return None
+        all_results = []
+        offset = 0
+        while True:
+            # Taille de la page courante (respecte le total voulu et le plafond)
+            page = self._PAGE_MAX
+            if total_voulu is not None:
+                page = min(page, total_voulu - len(all_results))
+            if page <= 0:
+                break
 
-        if data is not None:
-            with _cache_lock:
-                _cache[key] = data
+            params["limit"]  = page
+            params["offset"] = offset
 
-        return data
-    # ── Médicaments & Actes (Open Medic / Open Damir) ──────────────────────
-    def get_medicaments(self, annee, poste_id=None, limit=50):
-            import requests
-            
-            # On interroge le catalogue global pour voir les vrais IDs disponibles
-            url_catalogue = "https://data.ameli.fr/api/explore/v2.1/catalog/datasets?where=prescriptions&limit=10"
             try:
-                reponse = requests.get(url_catalogue)
-                if reponse.status_code == 200:
-                    datasets = reponse.json().get('datasets', [])
-                    print("\n═════════════ DATASETS TROUVÉS SUR AMELI ═════════════")
-                    for d in datasets:
-                        print(f"ID ÉCRIT POUR LE CODE -> : {d.get('dataset_id')}")
-                        print(f"Titre affiché sur le site : {d.get('metas', {}).get('default', {}).get('title')}\n")
-                    print("══════════════════════════════════════════════════════\n")
-            except Exception as e:
-                print(f"Erreur lors du scan du catalogue : {e}")
+                resp = self._session.get(url, params=params, timeout=self._timeout)
+                resp.raise_for_status()
+                page_results = resp.json().get("results", [])
+            except requests.RequestException as e:
+                # On remonte le corps de la réponse de l'API : c'est lui qui
+                # indique la vraie cause d'un 400 (champ inconnu, ODSQL invalide…).
+                detail = ""
+                reponse = getattr(e, "response", None)
+                if reponse is not None:
+                    detail = f" | réponse API : {reponse.text[:300]}"
+                logger.error("[AmeliAPI] Erreur sur %s : %s%s", dataset, e, detail)
+                # Échec : on renvoie None (et on ne met rien en cache).
+                return None
 
-            # En attendant que tu lises le terminal, on renvoie une liste vide 
-            # pour éviter l'erreur 503 et laisser ton formulaire s'afficher !
-            return []
+            all_results.extend(page_results)
+
+            # Arrêts : page incomplète (= dernière), total atteint, ou plafond offset
+            if len(page_results) < page:
+                break
+            if total_voulu is not None and len(all_results) >= total_voulu:
+                break
+            offset += page
+            if offset >= self._OFFSET_MAX:
+                break
+
+        if total_voulu is not None:
+            all_results = all_results[:total_voulu]
+
+        # Succès : mise en cache de la réponse complète.
+        with _cache_lock:
+            _cache[key] = all_results
+
+        return all_results
 
     # ── Utilitaires de cache (optionnel) ───────────────────────────────────
 
