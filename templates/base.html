@@ -11,33 +11,39 @@
 <body>
 
   <header class="topbar">
-    <a href="{{ url_for('accueil.index') }}" class="topbar-brand">
-      <div class="brand-icon">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-          <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
-        </svg>
-      </div>
+    <div class="header-inner">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
       <span>AMELI Data</span>
-    </a>
+    </div>
   </header>
-
-  <nav class="primary-nav">
-    <a href="{{ url_for('accueil.index') }}"
-       class="{% if request.endpoint == 'accueil.index' %}active{% endif %}">
-      Accueil
-    </a>
-    <a href="{{ url_for('dashboard.medicaments') }}"
-       class="{% if request.endpoint == 'dashboard.prescriptions' %}active{% endif %}">
-      Prescriptions
-    </a>
-    <a href="{{ url_for('dashboard.professionnels') }}"
-       class="{% if request.endpoint == 'dashboard.professionnels' %}active{% endif %}">
-      Professionnels de santé
-    </a>
-    <a href="{{ url_for('contact.index') }}"
-       class="{% if request.endpoint in ['contact.index', 'contact.envoyer'] %}active{% endif %}">
-      Contact
-    </a>
+  <div class="nav-gap"></div>
+  <nav>
+    <div class="nav-inner">
+      <div class="nav-list">
+        <a href="{{ url_for('accueil.index') }}" class="{% if request.endpoint == 'accueil.index' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Accueil
+        </a>
+        <a href="{{ url_for('dashboard.medicaments') }}" class="{% if request.endpoint == 'dashboard.medicaments' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Prescription
+        </a>
+        <a href="{{ url_for('dashboard.pathologies') }}" class="{% if request.endpoint == 'dashboard.pathologies' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Pathologies
+        </a>
+        <a href="{{ url_for('dashboard.professionnels') }}" class="{% if request.endpoint == 'dashboard.professionnels' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Professionnels de santé libéraux
+        </a>
+        <a href="{{ url_for('contact.index') }}" class="{% if request.endpoint in ['contact.index', 'contact.envoyer'] %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contact
+        </a>
+      </div>
+    </div>
   </nav>
 
   <main>

@@ -4,62 +4,71 @@
 
 <h1 class="page-heading">Professionnels de santé libéraux</h1>
 
-<div class="filters-panel">
-  <form action="{{ url_for('dashboard.professionnels') }}" method="get" style="display:contents">
-    <div class="filter-group">
-      <label>Profession</label>
-      <select name="profession_id" required>
-        <option value="">— Choisir —</option>
-        {% for p in professions %}
-        <option value="{{ p.id }}" {% if prof and prof.id==p.id %}selected{% endif %}>{{ p.libelle }}</option>
-        {% endfor %}
-      </select>
+<div class="patho-controls">
+  <div class="tabs-bar">
+    <button type="button" class="tab-btn active" onclick="switchTab(event,'tab-viz')">Type de visualisation</button>
+    <button type="button" class="tab-btn" onclick="switchTab(event,'tab-filters')">Filtres et indicateurs</button>
+  </div>
+  <div id="tab-viz" class="tab-content active">
+    <div class="viz-section">
+      <label>Choisissez le type de visualisation</label>
+      <div class="viz-switcher">
+        <button type="button" class="viz-btn active" onclick="switchViz('tab',this)">Tableau</button>
+        <button type="button" class="viz-btn" onclick="switchViz('graph',this)">Graphiques</button>
+      </div>
     </div>
-    <div class="filter-group">
-      <label>Région</label>
-      <select name="region_id" id="rp-region">
-        <option value="">— Choisir —</option>
-        {% for r in regions %}
-        <option value="{{ r.id }}" {% if reg and reg.id==r.id %}selected{% endif %}>{{ r.libelle }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Département</label>
-      <select name="departement_id" id="rp-dept">
-        <option value="">— Tous les départements —</option>
-      </select>
-    </div>
-    <div class="filter-group">
-      <label>Année</label>
-      <select name="annee" required>
-        {% for a in range(2023, 2014, -1) %}
-        <option value="{{ a }}" {% if annee==a %}selected{% endif %}>{{ a }}</option>
-        {% endfor %}
-      </select>
-    </div>
-    <button type="submit" class="btn btn-primary">Afficher</button>
-  </form>
+  </div>
+  <div id="tab-filters" class="tab-content">
+    <form action="{{ url_for('dashboard.professionnels') }}" method="get">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label>Profession</label>
+          <select name="profession_id" required>
+            <option value="">— Choisir —</option>
+            {% for p in professions %}
+            <option value="{{ p.id }}" {% if prof and prof.id==p.id %}selected{% endif %}>{{ p.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Région</label>
+          <select name="region_id" id="rp-region">
+            <option value="">— Choisir —</option>
+            {% for r in regions %}
+            <option value="{{ r.id }}" {% if reg and reg.id==r.id %}selected{% endif %}>{{ r.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Département</label>
+          <select name="departement_id" id="rp-dept">
+            <option value="">— Tous les départements —</option>
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Année</label>
+          <select name="annee" required>
+            {% for a in range(2023, 2014, -1) %}
+            <option value="{{ a }}" {% if annee==a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <button type="submit" class="btn btn-primary">Afficher</button>
+        </div>
+      </div>
+    </form>
+  </div>
 </div>
 
 {% if resultats is defined %}
 
-<div class="metrics-row">
+<div class="viz-container">
+  <div class="metrics-row">
   <div class="metric-card"><div class="mc-label">Profession</div><div class="mc-val" style="font-size:14px">{{ prof.libelle }}</div></div>
   <div class="metric-card"><div class="mc-label">Territoire</div><div class="mc-val" style="font-size:14px">{{ territoire_label }}</div></div>
   <div class="metric-card"><div class="mc-label">Année</div><div class="mc-val">{{ annee }}</div></div>
   <div class="metric-card"><div class="mc-label">Résultats</div><div class="mc-val">{{ resultats | length }}</div></div>
-</div>
-
-<div class="viz-switcher">
-  <button class="viz-btn active" onclick="switchViz('tab',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
-    Tableau
-  </button>
-  <button class="viz-btn" onclick="switchViz('graph',this)">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
-    Graphiques
-  </button>
 </div>
 
 <div id="view-tab" class="viz-view active">
@@ -219,6 +228,12 @@
 
 <script>const BASE_URL = "{{ BASE_URL }}";</script>
 <script>
+function switchTab(e, tabId) {
+  document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+  document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+  e.currentTarget.classList.add('active');
+  document.getElementById(tabId).classList.add('active');
+}
 document.getElementById("rp-region").addEventListener("change", async (e) => {
   const id = e.target.value;
   const d = document.getElementById("rp-dept");

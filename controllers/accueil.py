@@ -6,6 +6,7 @@ bp_accueil = Blueprint("accueil", __name__)
 
 
 @bp_accueil.route("/")
+@bp_accueil.route("/accueil")
 def index():
     """Page d'accueil : formulaire de sélection."""
     session = Session()
