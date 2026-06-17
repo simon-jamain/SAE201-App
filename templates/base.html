@@ -20,8 +20,8 @@
       {# ── Zone connexion (encadré du header) ── #}
       <div class="header-auth">
         {% if session.get('utilisateur') %}
-          <a href="{{ url_for('auth.espace') }}" class="header-link">Mon espace</a>
-          <a href="{{ url_for('auth.deconnexion') }}" class="header-link">Déconnexion</a>
+          <a href="{{ url_for('auth.espace') }}" class="btn-espace">Mon espace</a>
+          <a href="{{ url_for('auth.deconnexion') }}" class="btn-deconnexion">Déconnexion</a>
         {% else %}
           <a href="{{ url_for('auth.connexion') }}" class="btn-connexion">Se connecter</a>
         {% endif %}

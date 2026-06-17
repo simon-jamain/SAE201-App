@@ -113,23 +113,19 @@ footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; 
 .btn-ghost:focus-visible {
   background: rgba(30, 58, 138, 0.08);
 }
-
 .btn-espace {
-  background: transparent; color: #fff; padding: 8px 18px; border-radius: 8px;
+  background: #fff; color: #1e3a8a; padding: 8px 18px; border-radius: 8px;
   font-size: .875rem; font-weight: 600; text-decoration: none;
-  border: 1px solid #4ade80;
   transition: background .15s;
 }
-.btn-espace:hover { background: rgba(74, 222, 128, 0.15); }
+.btn-espace:hover { background: #e0e7ff; }
 
 .btn-deconnexion {
-  background: transparent; color: #fff; padding: 8px 18px; border-radius: 8px;
+  background: #f87171; color: #450a0a; padding: 8px 18px; border-radius: 8px;
   font-size: .875rem; font-weight: 600; text-decoration: none;
-  border: 1px solid #f87171;
   transition: background .15s;
 }
-.btn-deconnexion:hover { background: rgba(248, 113, 113, 0.15); }
-
+.btn-deconnexion:hover { background: #ef4444; }
 .cards-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
 @media (max-width: 640px) { .cards-grid { grid-template-columns: 1fr; } }
 
