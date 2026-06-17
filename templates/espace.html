@@ -1,0 +1,68 @@
+{% extends "base.html" %}
+
+{% block titre %}Mon espace{% endblock %}
+
+{% block contenu %}
+
+<link rel="stylesheet" href="{{ url_for('static', filename='css/honoraires.css') }}">
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
+<script type="application/json" id="data-evolution">{{ evolution | tojson }}</script>
+
+<h1 class="page-title">Mon espace — Surveillance de la grippe</h1>
+<p style="color:#6b7280; margin-bottom:24px;">
+  Données issues d'Odissé (Santé publique France),
+  réseau de surveillance des urgences et de SOS Médecins. Historique disponible : de 2020 à aujourd'hui.
+</p>
+
+<div class="patho-controls">
+  <form method="get" action="{{ url_for('auth.espace') }}" id="form-grippe">
+    <div class="filters-grid">
+
+      <div class="filter-group">
+        <label for="departement_id">Département</label>
+        <select id="departement_id" name="departement_id">
+          <option value="">-- Choisir --</option>
+          {% for d in departements %}
+            <option value="{{ d.code }}" {% if d.code == departement_id %}selected{% endif %}>
+              {{ d.code }} – {{ d.libelle }}
+            </option>
+          {% endfor %}
+        </select>
+      </div>
+
+      <div class="filter-group">
+        <label for="classe_age">Classe d'âge</label>
+        <select id="classe_age" name="classe_age">
+          {% for c in classes_age %}
+            <option value="{{ c }}" {% if c == classe_age %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </div>
+
+    </div>
+    <button type="submit" class="btn-afficher">Afficher</button>
+  </form>
+</div>
+
+<div class="results">
+  {% if departement_id %}
+    <h3>Évolution – {{ dept.libelle if dept else departement_id }} – {{ classe_age }}</h3>
+    {% if evolution %}
+      <canvas id="courbe-grippe"></canvas>
+      <p class="viz-hint">
+        Les pics correspondent aux épidémies hivernales ; les niveaux bas en
+        été reflètent une circulation résiduelle du virus, pas une absence
+        de données.
+      </p>
+    {% else %}
+      <p>Aucune donnée disponible pour ce département.</p>
+    {% endif %}
+  {% else %}
+    <p style="color:#6b7280;">Choisissez un département pour afficher son évolution depuis 2020.</p>
+  {% endif %}
+</div>
+
+<script src="{{ url_for('static', filename='js/espace.js') }}"></script>
+
+{% endblock %}

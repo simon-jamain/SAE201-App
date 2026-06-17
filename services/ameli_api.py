@@ -10,16 +10,19 @@ class AmeliAPI:
 
     BASE_URL = "https://data.ameli.fr/api/explore/v2.1/catalog/datasets"
 
+    _CORRESPONDANCES_HONORAIRES = {
+        "Médecins généralistes (hors médecins à expertise particulière)":
+            "Médecins généralistes (hors médecins à expertise particulière - MEP)",
+        "Chirurgiens-dentistes spécialistes d'orthopédie dento-faciale":
+            "Chirurgiens-dentistes spécialistes d'orthopédie dento-faciale (ODF)",
+    }
+
     def __init__(self, timeout=10):
-        # Attributs privés (convention _ : ne pas utiliser depuis l'extérieur)
         self._timeout = timeout
         self._session = requests.Session()
 
     def get_effectifs(self, profession, departement_code, annee):
-        """Effectifs pour une profession, un département et une année.
-
-        Retourne une liste de dictionnaires {annee, effectif, densite}.
-        """
+        """Effectifs pour une profession, un département et une année."""
         where = (
             f'profession_sante="{profession}" AND '
             f'departement="{departement_code}" AND '
@@ -51,7 +54,7 @@ class AmeliAPI:
         )
 
     def get_pathology_labels(self, annee=None):
-        """Liste des pathologies disponibles dans l'API AMELI (dataset effectifs)."""
+        """Liste des pathologies disponibles dans l'API AMELI."""
         clauses = [
             'cla_age_5="tsage"',
             'sexe="9"',
@@ -74,7 +77,7 @@ class AmeliAPI:
         return labels
 
     def get_pathologies(self, annee=None, pathologie="all", region=None, departement=None, limit=5000):
-        """Récupère et agrège les données des pathologies depuis l'API AMELI (dataset effectifs)."""
+        """Récupère et agrège les données des pathologies."""
         clauses = [
             'cla_age_5="tsage"',
             'sexe="9"',
@@ -120,8 +123,8 @@ class AmeliAPI:
                 }
 
             nombre = row.get("ntop")
-            prev = row.get("prev")
-            pop = row.get("npop")
+            prev   = row.get("prev")
+            pop    = row.get("npop")
             try:
                 nombre = float(nombre)
             except (TypeError, ValueError):
@@ -138,10 +141,10 @@ class AmeliAPI:
             aggregates[key]["nombre_patients"] += nombre
             if pop > 0:
                 aggregates[key]["prev_weighted"] += prev * pop
-                aggregates[key]["populations"] += pop
+                aggregates[key]["populations"]   += pop
             else:
                 aggregates[key]["prev_weighted"] += prev * nombre
-                aggregates[key]["populations"] += nombre
+                aggregates[key]["populations"]   += nombre
 
         results = []
         for agg in aggregates.values():
@@ -149,10 +152,10 @@ class AmeliAPI:
             if agg["populations"]:
                 prevalence = 100.0 * agg["prev_weighted"] / agg["populations"]
             results.append({
-                "annee": agg["annee"],
-                "region": agg["region"],
-                "departement": agg["departement"],
-                "pathologie": agg["pathologie"],
+                "annee":           agg["annee"],
+                "region":          agg["region"],
+                "departement":     agg["departement"],
+                "pathologie":      agg["pathologie"],
                 "nombre_patients": agg["nombre_patients"],
                 "taux_prevalence": round(prevalence, 2),
             })
@@ -166,59 +169,201 @@ class AmeliAPI:
             ),
         )
 
+    # Plafonds imposés par l'endpoint "records" de l'API Explore v2.1
+    _PAGE_MAX   = 100     # nombre max de lignes par requête
+    _OFFSET_MAX = 10000   # offset + limit doit rester <= 10000
+
     def _requete(self, dataset, params):
-        """Méthode privée : effectue une requête GET et gère les erreurs."""
-        url = f"{self.BASE_URL}/{dataset}/records"
+        """Méthode privée : effectue une requête GET (API Explore v2.1).
+
+        L'API v2.1 pagine avec ``limit`` et ``offset`` (et NON ``rows``/``start``,
+        qui appartiennent à l'ancienne API v1 : les envoyer provoque un 400).
+        On récupère donc les données par pages de 100 au maximum.
+        """
+        url    = f"{self.BASE_URL}/{dataset}/records"
         params = params.copy()
-        limit = None
-        if "limit" in params:
-            try:
-                limit = int(params.pop("limit"))
-            except (TypeError, ValueError):
-                limit = None
 
-        rows = None
-        if "rows" in params:
-            try:
-                rows = int(params["rows"])
-            except (TypeError, ValueError):
-                rows = None
-
-        if limit is not None and limit > 0:
-            rows = min(limit, 100)
-        elif rows is not None and rows > 100:
-            rows = 100
-
-        if rows is not None:
-            params["rows"] = rows
-
-        if limit is None:
-            limit = rows
+        # Nombre total de lignes souhaité (None = pas de limite explicite)
+        total_voulu = None
+        for cle in ("limit", "rows"):          # "rows" toléré par compat. ascendante
+            if cle in params:
+                try:
+                    total_voulu = int(params.pop(cle))
+                except (TypeError, ValueError):
+                    total_voulu = None
+                break
+        params.pop("start", None)               # jamais envoyé à l'API v2.1
 
         all_results = []
-        start = 0
+        offset = 0
         while True:
-            if start:
-                params["start"] = start
+            # Taille de la page courante (respecte le total voulu et le plafond)
+            page = self._PAGE_MAX
+            if total_voulu is not None:
+                page = min(page, total_voulu - len(all_results))
+            if page <= 0:
+                break
+
+            params["limit"]  = page
+            params["offset"] = offset
+
             try:
                 resp = self._session.get(url, params=params, timeout=self._timeout)
                 resp.raise_for_status()
                 page_results = resp.json().get("results", [])
             except requests.RequestException as e:
-                print(f"[AmeliAPI] Erreur : {e}")
+                # On remonte le corps de la réponse de l'API : c'est lui qui
+                # indique la vraie cause d'un 400 (champ inconnu, ODSQL invalide…).
+                detail = ""
+                reponse = getattr(e, "response", None)
+                if reponse is not None:
+                    detail = f" | réponse API : {reponse.text[:300]}"
+                print(f"[AmeliAPI] Erreur : {e}{detail}")
                 return all_results
 
             all_results.extend(page_results)
-            if not page_results or rows is None:
+
+            # Arrêts : page incomplète (= dernière), total atteint, ou plafond offset
+            if len(page_results) < page:
                 break
-            if limit is not None and len(all_results) >= limit:
+            if total_voulu is not None and len(all_results) >= total_voulu:
                 break
-            if len(page_results) < rows:
-                break
-            start += rows
-            if limit is not None and start >= limit:
+            offset += page
+            if offset >= self._OFFSET_MAX:
                 break
 
-        if limit is not None:
-            return all_results[:limit]
+        if total_voulu is not None:
+            return all_results[:total_voulu]
         return all_results
+
+    # ── Méthodes honoraires ───────────────────────────────────────────────
+
+    def get_honoraires(self, profession, departement_code, annee):
+        """Honoraires détaillés pour une profession, un département et une année.
+
+        group_by supprimé : l'API refuse year() + group_by combinés (erreur 400).
+        Les filtres where suffisent à éviter les doublons sur ce dataset.
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'departement="{departement_code}" AND '
+            f'year(annee)={annee} AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires IS NOT NULL'
+        )
+        return self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "year(annee) as annee,"
+                    "type_honoraires_niveau_1,"
+                    "type_honoraires_niveau_2,"
+                    "type_honoraires_niveau_3,"
+                    "montant_honoraires,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "order_by": (
+                    "honoraires_ordre_niv_1,"
+                    "honoraires_ordre_niv_2,"
+                    "honoraires_ordre_niv_3"
+                ),
+                "limit": 100,
+            },
+        )
+
+    def get_evolution_honoraires(self, profession, departement_code):
+        """Évolution du montant total des honoraires sur toutes les années.
+
+        group_by supprimé : même raison que get_honoraires().
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'departement="{departement_code}" AND '
+            f'type_honoraires_niveau_1="Ensemble des honoraires" AND '
+            f'type_honoraires_niveau_2 IS NULL AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires_moyens IS NOT NULL'
+        )
+        return self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "year(annee) as annee,"
+                    "montant_honoraires,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "order_by": "annee",
+                "limit": 100,
+            },
+        )
+
+    def get_evolution_comparaison(self, profession, departement_1, departement_2, type_honoraires_niv1):
+        """Comparaison de l'évolution entre deux départements.
+
+        group_by supprimé : même raison que get_honoraires().
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'(departement="{departement_1}" OR departement="{departement_2}") AND '
+            f'type_honoraires_niveau_1="{type_honoraires_niv1}" AND '
+            f'type_honoraires_niveau_2 IS NULL AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires_moyens IS NOT NULL'
+        )
+        return self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "year(annee) as annee,"
+                    "departement,"
+                    "libelle_departement,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "order_by": "annee,departement",
+                "limit": 200,
+            },
+        )
+
+    def get_classement_departements(self, profession, annee):
+        """Classement des départements par montant moyen.
+
+        group_by conservé ici car pas de year() dans le select — pas de conflit.
+        """
+        profession = self._CORRESPONDANCES_HONORAIRES.get(profession, profession)
+        where = (
+            f'profession_sante="{profession}" AND '
+            f'year(annee)={annee} AND '
+            f'type_honoraires_niveau_1="Ensemble des honoraires" AND '
+            f'type_honoraires_niveau_2 IS NULL AND '
+            f'vision_profession_territoire="oui" AND '
+            f'montant_honoraires_moyens IS NOT NULL'
+        )
+        resultats = self._requete(
+            "honoraires-detailles",
+            {
+                "select": (
+                    "departement,"
+                    "libelle_departement,"
+                    "montant_honoraires_moyens"
+                ),
+                "where": where,
+                "group_by": (
+                    "departement,"
+                    "libelle_departement,"
+                    "montant_honoraires_moyens"
+                ),
+                "limit": 200,
+            },
+        )
+        def cle_tri(r):
+            try:
+                return float(r.get("montant_honoraires_moyens") or 0)
+            except (TypeError, ValueError):
+                return 0.0
+        return sorted(resultats, key=cle_tri, reverse=True)

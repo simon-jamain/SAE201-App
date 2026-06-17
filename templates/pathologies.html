@@ -1,14 +1,8 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMELI Data – Pathologies</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
-  <main>
+{% extends "base.html" %}
+
+{% block titre %}Pathologies{% endblock %}
+
+{% block contenu %}
     <h1 style="font-size:2rem; margin-bottom:24px;">Pathologies</h1>
 
     <div class="patho-controls">
@@ -116,8 +110,6 @@
         <p class="map-note">Note : Carte simplifiée. Les valeurs affichées sont des moyennes par région.</p>
       </div>
     </div>
-  </main>
-
   <script>
     function switchTab(e, tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -396,5 +388,4 @@
 
     initializePathologies();
   </script>
-</body>
-</html>
+{% endblock %}

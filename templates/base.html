@@ -4,14 +4,67 @@
   <meta charset="UTF-8">
   <title>{% block titre %}Données de santé{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/auth.css') }}">
 </head>
 <body>
+  {% set chemin = request.path.rstrip('/') or '/' %}
+
   <header>
-    <h1>Données de santé libérale</h1>
-    <nav>
-      <a href="{{ url_for('accueil.index') }}">Accueil</a>
-    </nav>
+    <div class="header-inner">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24">
+        <path d="M22 12h-4l-3 9L9 3l-3 9H2"/>
+      </svg>
+      <span>AMELI Data</span>
+
+      {# ── Zone connexion (encadré du header) ── #}
+      <div class="header-auth">
+        {% if session.get('utilisateur') %}
+          <span class="header-user">Bonjour, {{ session['utilisateur'] }}</span>
+          <a href="{{ url_for('auth.espace') }}" class="header-link">Mon espace</a>
+          <a href="{{ url_for('auth.deconnexion') }}" class="header-link">Déconnexion</a>
+        {% else %}
+          <a href="{{ url_for('auth.connexion') }}" class="btn-connexion">Se connecter</a>
+        {% endif %}
+      </div>
+    </div>
   </header>
+
+  <div class="nav-gap"></div>
+
+  <nav>
+    <div class="nav-inner">
+      <div class="nav-list">
+        <a href="/" class="{% if chemin == '/' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><polyline points="9 22 9 12 15 12 15 22"/></svg>
+          Accueil
+        </a>
+        <a href="/presentation" class="{% if chemin == '/presentation' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+          Présentation d'AMELI
+        </a>
+        <a href="/pathologies" class="{% if chemin == '/pathologies' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+          Pathologies
+        </a>
+        <a href="/honoraires" class="{% if chemin == '/honoraires' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+          Honoraires
+        </a>
+        <a href="/acces-soins" class="{% if chemin == '/acces-soins' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+          Accès aux soins
+        </a>
+        <a href="/professionnels" class="{% if chemin == '/professionnels' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          Professionnels de santé libéraux
+        </a>
+        <a href="/contact" class="{% if chemin == '/contact' %}active{% endif %}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"/><polyline points="22,6 12,13 2,6"/></svg>
+          Contact
+        </a>
+      </div>
+    </div>
+  </nav>
 
   <main>
     {% block contenu %}{% endblock %}

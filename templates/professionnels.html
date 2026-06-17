@@ -1,18 +1,10 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMELI Data – Professionnels</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
-  <main>
-    <div class="content-box">
-      <h1>Professionnels de santé libéraux</h1>
-      <p style="color:#6b7280;">Cette section affichera les statistiques sur les professionnels de santé libéraux.</p>
-    </div>
-  </main>
-</body>
-</html>
+{% extends "base.html" %}
+
+{% block titre %}Professionnels{% endblock %}
+
+{% block contenu %}
+<div class="content-box">
+  <h1>Professionnels de santé libéraux</h1>
+  <p style="color:#6b7280;">Cette section affichera les statistiques sur les professionnels de santé libéraux.</p>
+</div>
+{% endblock %}
