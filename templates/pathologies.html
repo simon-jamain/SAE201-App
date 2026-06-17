@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>AMELI Data – Pathologies</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+  <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+</head>
+<body>
+  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
+  <main>
+    <h1 style="font-size:2rem; margin-bottom:24px;">Pathologies</h1>
+
+    <div class="patho-controls">
+      <div class="tabs-bar">
+        <button class="tab-btn active" onclick="switchTab(event,'tab-viz')">Type de visualisation</button>
+        <button class="tab-btn" onclick="switchTab(event,'tab-filters')">Filtres et indicateurs</button>
+      </div>
+
+      <div id="tab-viz" class="tab-content active">
+        <div class="viz-section">
+          <label>Choisissez le type de visualisation</label>
+          <div class="viz-buttons">
+            <button class="viz-btn active" onclick="setViz(event,'table')">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M3 15h18M9 3v18"/></svg>
+              Tableau
+            </button>
+            <button class="viz-btn" onclick="setViz(event,'chart')">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+              Graphe
+            </button>
+            <button class="viz-btn" onclick="setViz(event,'map')">
+              <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><polygon points="1 6 1 22 8 18 16 22 23 18 23 2 16 6 8 2 1 6"/><line x1="8" y1="2" x2="8" y2="18"/><line x1="16" y1="6" x2="16" y2="22"/></svg>
+              Carte
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <div id="tab-filters" class="tab-content">
+        <div class="filters-grid">
+          <div class="filter-group">
+            <label for="sel-indicator">Indicateur</label>
+            <select id="sel-indicator" onchange="updateViz()">
+              <option value="nombre_patients">Nombre de patients</option>
+              <option value="taux_prevalence">Taux de prévalence (%)</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="sel-year">Année</label>
+            <select id="sel-year">
+              <option value="2023">2023</option>
+              <option value="2022">2022</option>
+              <option value="2021">2021</option>
+              <option value="2020">2020</option>
+              <option value="2019">2019</option>
+              <option value="2018">2018</option>
+              <option value="2017">2017</option>
+              <option value="2016">2016</option>
+              <option value="2015">2015</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="sel-region">Région</label>
+            <select id="sel-region" onchange="onRegionChange()">
+              <option value="all">Toutes les régions</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="sel-departement">Département</label>
+            <select id="sel-departement" onchange="updateViz()">
+              <option value="all">Tous les départements</option>
+            </select>
+          </div>
+          <div class="filter-group">
+            <label for="sel-pathology">Pathologie</label>
+            <select id="sel-pathology" onchange="updateViz()">
+              <option value="all">Toutes les pathologies</option>
+              <option value="Diabète">Diabète</option>
+              <option value="Hypertension artérielle">Hypertension artérielle</option>
+              <option value="Asthme">Asthme</option>
+            </select>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="viz-container">
+      <div id="viz-table">
+        <div style="overflow-x:auto;">
+          <table class="data-table">
+            <thead>
+              <tr>
+                <th>Région</th><th>Pathologie</th><th>Département</th><th>Année</th>
+                <th id="th-indicator" style="text-align:right;">Nombre de cas</th>
+              </tr>
+            </thead>
+            <tbody id="table-body"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <div id="viz-chart" style="display:none; overflow-x:auto;">
+        <canvas id="chart-canvas" height="500"></canvas>
+      </div>
+
+      <div id="viz-map" style="display:none;">
+        <div class="map-mode-controls">
+          <label for="sel-map-mode">Affichage :</label>
+          <select id="sel-map-mode" onchange="setMapMode(this.value)">
+            <option value="region">Par régions</option>
+            <option value="departement">Par départements</option>
+          </select>
+        </div>
+        <div id="plotly-div" class="plotly-chart"></div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    function switchTab(e, tabId) {
+      document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      document.getElementById(tabId).classList.add('active');
+    }
+
+    function setViz(e, type) {
+      currentViz = type;
+      document.querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
+      e.currentTarget.classList.add('active');
+      updateViz();
+    }
+
+    const apiPathologiesUrl = "{{ url_for('api.pathologies') }}";
+    let currentViz = 'table';
+    let currentMapMode = 'region';
+    let pathologiesData = [];
+
+    const apiRegionsUrl = "{{ url_for('api.regions') }}";
+    const apiDepartmentsBaseUrl = "{{ url_for('api.departements', region_id=0) }}";
+
+    async function fetchPathologyLabels(year) {
+      const params = new URLSearchParams();
+      if (year) params.set('year', year);
+      params.set('distinct', '1');
+      const resp = await fetch(`${apiPathologiesUrl}?${params.toString()}`);
+      if (!resp.ok) {
+        console.error('Impossible de charger la liste des pathologies', resp.statusText);
+        return [];
+      }
+      return await resp.json();
+    }
+
+    async function fetchRegions() {
+      const resp = await fetch(apiRegionsUrl);
+      if (!resp.ok) {
+        console.error('Impossible de charger la liste des régions', resp.statusText);
+        return [];
+      }
+      return await resp.json();
+    }
+
+    async function fetchDepartments(region) {
+      const select = document.getElementById('sel-departement');
+      const url = `${apiDepartmentsBaseUrl.replace(/0$/, '')}${region}`;
+      const resp = await fetch(url);
+      if (!resp.ok) {
+        console.error('Impossible de charger la liste des départements', resp.statusText);
+        return [];
+      }
+      return await resp.json();
+    }
+
+    async function fetchPathologiesData(year, pathologie, region, departement) {
+      const params = new URLSearchParams();
+      if (year) params.set('year', year);
+      if (pathologie && pathologie !== 'all') params.set('pathologie', pathologie);
+      if (region && region !== 'all') params.set('region', region);
+      if (departement && departement !== 'all') params.set('departement', departement);
+      const resp = await fetch(`${apiPathologiesUrl}?${params.toString()}`);
+      if (!resp.ok) {
+        console.error('Impossible de charger les données pathologies', resp.statusText);
+        return [];
+      }
+      return await resp.json();
+    }
+
+    function populatePathologySelect(pathos) {
+      const select = document.getElementById('sel-pathology');
+      const selected = select.value || 'all';
+      select.innerHTML = '<option value="all">Toutes les pathologies</option>' +
+        pathos.map(patho => `
+          <option value="${patho}">${patho}</option>
+        `).join('');
+      if (pathos.includes(selected)) {
+        select.value = selected;
+      }
+    }
+
+    function populateRegionSelect(regions) {
+      const select = document.getElementById('sel-region');
+      const selected = select.value || 'all';
+      select.innerHTML = '<option value="all">Toutes les régions</option>' +
+        regions.map(region => `
+          <option value="${region.id}" data-code="${region.code}">${region.libelle}</option>
+        `).join('');
+      if (regions.some(r => String(r.id) === selected)) {
+        select.value = selected;
+      }
+    }
+
+    function populateDepartmentSelect(departments) {
+      const select = document.getElementById('sel-departement');
+      const selected = select.value || 'all';
+      select.innerHTML = '<option value="all">Tous les départements</option>' +
+        departments.map(dept => `
+          <option value="${dept.code}">${dept.libelle}</option>
+        `).join('');
+      if (departments.some(d => d.code === selected)) {
+        select.value = selected;
+      }
+    }
+
+    function getIndicatorLabel(ind) {
+      return {
+        nombre_patients: 'Nombre de patients',
+        taux_prevalence: 'Taux de prévalence (%)',
+      }[ind] || ind;
+    }
+
+    function displayRegionLabel(row) {
+      return row.region_libelle || row.region || '';
+    }
+
+    function isOutreMerRegion(row) {
+      const outreMerCodes = new Set(['01', '02', '03', '04', '06']);
+      return row.region && outreMerCodes.has(row.region.toString().padStart(2, '0'));
+    }
+
+    function displayDepartementLabel(row) {
+      if (isOutreMerRegion(row)) {
+        return '';
+      }
+      return row.departement_libelle || row.departement || '';
+    }
+
+    function formatValue(val, ind) {
+      if (ind === 'nombre_patients') return Number(val).toLocaleString('fr-FR');
+      if (ind === 'taux_prevalence') return Number(val).toFixed(2) + ' %';
+      return val;
+    }
+
+    function getFilteredData() {
+      const year = parseInt(document.getElementById('sel-year').value, 10);
+      const path = document.getElementById('sel-pathology').value;
+      return pathologiesData.filter(d => {
+        const rowYear = d.annee != null ? Number(d.annee) : null;
+        return (!year || rowYear === year) &&
+               (path === 'all' || d.pathologie === path);
+      });
+    }
+
+    async function updateViz() {
+      const ind = document.getElementById('sel-indicator').value;
+      const year = parseInt(document.getElementById('sel-year').value, 10);
+      const path = document.getElementById('sel-pathology').value;
+      const regionSelect = document.getElementById('sel-region');
+      const region = regionSelect.value !== 'all' ? regionSelect.selectedOptions[0]?.dataset.code : null;
+      const departement = document.getElementById('sel-departement').value;
+      if (currentViz === 'map') {
+        pathologiesData = await fetchPathologiesData(year, path, null, null);
+      } else {
+        pathologiesData = await fetchPathologiesData(year, path, region, departement);
+      }
+      const data = getFilteredData();
+      document.getElementById('viz-table').style.display = 'none';
+      document.getElementById('viz-chart').style.display = 'none';
+      document.getElementById('viz-map').style.display = 'none';
+      if (currentViz === 'table') renderTable(data, ind);
+      if (currentViz === 'chart') renderChart(data, ind);
+      if (currentViz === 'map') renderMap(data, ind);
+    }
+
+    function renderTable(data, ind) {
+      document.getElementById('viz-table').style.display = 'block';
+      document.getElementById('th-indicator').textContent = getIndicatorLabel(ind);
+      document.getElementById('table-body').innerHTML = data.map(row => `
+        <tr>
+          <td>${displayRegionLabel(row)}</td><td>${row.pathologie}</td>
+          <td>${displayDepartementLabel(row)}</td><td>${row.annee}</td>
+          <td style="text-align:right;">${formatValue(row[ind], ind)}</td>
+        </tr>
+      `).join('');
+    }
+
+    function renderChart(data, ind) {
+      document.getElementById('viz-chart').style.display = 'block';
+      const canvas = document.getElementById('chart-canvas');
+      const ctx = canvas.getContext('2d');
+      const regionMap = {};
+      const pathoSet = new Set();
+      data.forEach(d => {
+        if (!regionMap[d.region]) regionMap[d.region] = {};
+        regionMap[d.region][d.pathologie] = d[ind];
+        pathoSet.add(d.pathologie);
+      });
+      const regions = Object.keys(regionMap);
+      const pathos = Array.from(pathoSet);
+      const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
+      const barW = 40, groupGap = 20, leftPad = 100, topPad = 30, bottomPad = 130, rightPad = 20;
+      const groupW = Math.max(pathos.length, 1) * barW + groupGap;
+      const totalW = Math.max(800, leftPad + regions.length * groupW + rightPad);
+      const totalH = 500;
+      canvas.width = totalW; canvas.height = totalH;
+      ctx.clearRect(0, 0, totalW, totalH);
+      let maxVal = 0;
+      data.forEach(d => { if (d[ind] > maxVal) maxVal = d[ind]; });
+      const chartH = totalH - topPad - bottomPad;
+      ctx.strokeStyle = '#e5e7eb'; ctx.fillStyle = '#6b7280'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+      for (let i = 0; i <= 5; i++) {
+        const y = topPad + chartH - (i / 5) * chartH;
+        ctx.beginPath(); ctx.moveTo(leftPad, y); ctx.lineTo(totalW - rightPad, y); ctx.stroke();
+        ctx.fillText(formatValue((i / 5) * maxVal, ind), leftPad - 6, y + 4);
+      }
+      regions.forEach((region, ri) => {
+        const groupX = leftPad + ri * groupW;
+        pathos.forEach((patho, pi) => {
+          const val = regionMap[region][patho] || 0;
+          const barH = maxVal > 0 ? (val / maxVal) * chartH : 0;
+          ctx.fillStyle = colors[pi % colors.length];
+          ctx.fillRect(groupX + pi * barW + 2, topPad + chartH - barH, barW - 4, barH);
+        });
+        ctx.save();
+        ctx.translate(groupX + (Math.min(pathos.length, 1) * barW) / 2, topPad + chartH + 10);
+        ctx.rotate(-Math.PI / 4);
+        ctx.fillStyle = '#374151'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
+        ctx.fillText(region, 0, 0);
+        ctx.restore();
+      });
+      const legendY = totalH - 20;
+      pathos.forEach((patho, i) => {
+        const x = leftPad + i * 200;
+        ctx.fillStyle = colors[i % colors.length]; ctx.fillRect(x, legendY - 12, 14, 14);
+        ctx.fillStyle = '#374151'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
+        ctx.fillText(patho, x + 18, legendY);
+      });
+    }
+
+    const mapGeoJsonCache = { region: null, departement: null };
+
+    async function loadFranceGeoJson(type) {
+      if (mapGeoJsonCache[type]) return mapGeoJsonCache[type];
+      const urls = {
+        region: 'https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson',
+        departement: 'https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-version-simplifiee.geojson',
+      };
+      const resp = await fetch(urls[type]);
+      if (!resp.ok) {
+        console.error('Impossible de charger le geojson de la France', resp.statusText);
+        return null;
+      }
+      mapGeoJsonCache[type] = await resp.json();
+      return mapGeoJsonCache[type];
+    }
+
+    function setMapMode(mode) {
+      currentMapMode = mode;
+      updateViz();
+    }
+
+    async function renderMap(data, ind) {
+      document.getElementById('viz-map').style.display = 'block';
+      const buckets = {};
+      data.forEach(d => {
+        const code = currentMapMode === 'region'
+          ? String(d.region || '').padStart(2, '0')
+          : String(d.departement || '').padStart(2, '0');
+        const label = currentMapMode === 'region'
+          ? (d.region_libelle || d.region || 'Inconnue')
+          : (d.departement_libelle || d.departement || 'Inconnu');
+        if (!code) return;
+        if (!buckets[code]) buckets[code] = { sum: 0, count: 0, label, values: [] };
+        buckets[code].sum += Number(d[ind] || 0);
+        buckets[code].count += 1;
+        buckets[code].values.push(Number(d[ind] || 0));
+      });
+      const features = Object.entries(buckets).map(([code, value]) => ({
+        code,
+        label: value.label,
+        value: ind === 'nombre_patients'
+          ? value.sum
+          : (value.count ? value.values.reduce((acc, cur) => acc + cur, 0) / value.count : 0),
+      }));
+      if (!features.length) {
+        document.getElementById('plotly-div').innerHTML = '<div class="map-empty">Aucune donnée disponible pour cette sélection.</div>';
+        return;
+      }
+      const france = await loadFranceGeoJson(currentMapMode);
+      if (!france) {
+        document.getElementById('plotly-div').innerHTML = '<div class="map-empty">Impossible de charger la carte de France.</div>';
+        return;
+      }
+      const locations = features.map(f => f.code);
+      const z = features.map(f => f.value);
+      const hovertext = features.map(f => f.label);
+      const trace = {
+        type: 'choropleth',
+        geojson: france,
+        locations,
+        z,
+        featureidkey: 'properties.code',
+        colorscale: 'Portland',
+        marker: { line: { width: 0.5, color: 'white' } },
+        colorbar: { title: getIndicatorLabel(ind), thicknessmode: 'fraction', thickness: 0.03 },
+        hovertext,
+        hovertemplate: '<b>%{hovertext}</b><br>' + `${getIndicatorLabel(ind)}: %{z}<extra></extra>`,
+      };
+      const layout = {
+        title: { text: `Carte de France – ${getIndicatorLabel(ind)} (${currentMapMode === 'region' ? 'régions' : 'départements'})`, font: { size: 18 } },
+        geo: {
+          scope: 'europe',
+          projection: { type: 'mercator' },
+          showland: true,
+          landcolor: '#f2f2f2',
+          showframe: false,
+          showcountries: false,
+          fitbounds: 'locations',
+        },
+        margin: { t: 70, l: 0, r: 0, b: 0 },
+      };
+      Plotly.react('plotly-div', [trace], layout, { responsive: true });
+    }
+
+    async function onRegionChange() {
+      const regionSelect = document.getElementById('sel-region');
+      const regionId = regionSelect.value;
+      const departments = regionId && regionId !== 'all' ? await fetchDepartments(regionId) : [];
+      populateDepartmentSelect(departments);
+      updateViz();
+    }
+
+    async function initializePathologies() {
+      const year = parseInt(document.getElementById('sel-year').value, 10);
+      const labels = await fetchPathologyLabels(year);
+      populatePathologySelect(labels);
+      const regions = await fetchRegions();
+      populateRegionSelect(regions);
+      const departments = [];
+      populateDepartmentSelect(departments);
+      await updateViz();
+    }
+
+    document.getElementById('sel-year').addEventListener('change', async () => {
+      await initializePathologies();
+    });
+    document.getElementById('sel-pathology').addEventListener('change', updateViz);
+    document.getElementById('sel-region').addEventListener('change', onRegionChange);
+    document.getElementById('sel-departement').addEventListener('change', updateViz);
+    document.getElementById('sel-indicator').addEventListener('change', updateViz);
+
+    initializePathologies();
+  </script>
+</body>
+</html>
