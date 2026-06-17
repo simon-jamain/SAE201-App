@@ -249,7 +249,7 @@ main { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
   margin-bottom: 24px;
 }
 @media (max-width: 880px) { .charts-grid { grid-template-columns: 1fr; } }
-..chart-label { font-size: 0.95rem; font-weight: 600; color: #475569; margin-bottom: 12px; }
+.chart-label { font-size: 0.95rem; font-weight: 600; color: #475569; margin-bottom: 12px; }
 .chart-legend { display: flex; flex-wrap: wrap; gap: 10px; margin-bottom: 12px; font-size: 0.9rem; color: #64748b; }
 .chart-legend span { display: flex; align-items: center; gap: 6px; }
 .chart-legend b { width: 12px; height: 12px; border-radius: 3px; display: inline-block; flex-shrink: 0; }
