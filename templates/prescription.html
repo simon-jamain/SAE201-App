@@ -1,0 +1,316 @@
+{% extends "base.html" %}
+{% block titre %}Prescriptions · AMELI Data{% endblock %}
+{% block contenu %}
+
+<h1 class="page-heading">Prescriptions</h1>
+
+<div class="patho-controls">
+  <div class="tabs-bar">
+    <button type="button" class="tab-btn active" onclick="switchTab(event,'tab-viz')">Type de visualisation</button>
+    <button type="button" class="tab-btn" onclick="switchTab(event,'tab-filters')">Filtres et indicateurs</button>
+  </div>
+  <div id="tab-viz" class="tab-content active">
+    <div class="viz-section">
+      <label>Choisissez le type de visualisation</label>
+      <div class="viz-switcher">
+        <button type="button" class="viz-btn active" onclick="switchViz('pp', 'tab', this)">
+          Tableau
+          {% if mode == 'region' %}
+            {% if annee %}({{ annee }}){% else %}(Toutes années){% endif %}
+          {% else %}
+            (Toutes années)
+          {% endif %}
+        </button>
+        <button type="button" class="viz-btn" onclick="switchViz('pp', 'graph', this)">Graphique Évolution Historique</button>
+      </div>
+    </div>
+  </div>
+  <div id="tab-filters" class="tab-content">
+    <form action="{{ url_for('dashboard.medicaments') }}" method="get">
+      <div class="filters-grid">
+
+        <div class="filter-group">
+          <label>Profession</label>
+          <select name="profession_id" required>
+            <option value="">— Choisir —</option>
+            {% for p in professions %}
+            <option value="{{ p.id }}" {% if prof and prof.id == p.id %}selected{% endif %}>{{ p.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Poste de Prescription</label>
+          <select name="poste_id">
+            <option value="">— Tous postes —</option>
+            {% for pst in postes %}
+            <option value="{{ pst.id }}" {% if poste_id and poste_id|int == pst.id|int %}selected{% endif %}>{{ pst.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Région</label>
+          <select name="region_id" id="pp-region">
+            <option value="">— Choisir —</option>
+            {% for r in regions %}
+            <option value="{{ r.id }}">{{ r.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <label>Département <small style="color:#6b7280;">(optionnel)</small></label>
+          <select name="departement_id" id="pp-dept">
+            {% if dept %}
+            <option value="">— Tous les depts de la région —</option>
+            <option value="{{ dept.id }}" selected>{{ dept.code }} – {{ dept.libelle }}</option>
+            {% else %}
+            <option value="">— Tous les depts de la région —</option>
+            {% endif %}
+          </select>
+        </div>
+
+        <div class="filter-group" id="filtre-annee-groupe">
+          <label>
+            Année (Tableau)
+            <small id="annee-hint" style="color:#6b7280; display:none;">
+              — obligatoire sans département
+            </small>
+          </label>
+          <select name="annee" id="filtre-annee">
+            <option value="" {% if not annee %}selected{% endif %}>— Toutes les années —</option>
+            {% for a in range(2023, 2018, -1) %}
+            <option value="{{ a }}" {% if annee == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="filter-group">
+          <button type="submit" class="btn btn-primary">Rechercher</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if erreur_filtre %}
+<div class="empty" style="border-left: 4px solid #e53e3e; background: #fff5f5;">
+  <strong>⚠ Sélection insuffisante</strong>
+  {{ erreur_filtre }}
+</div>
+{% endif %}
+
+{% if resultats %}
+
+<div class="viz-container">
+  <div class="metrics-row">
+  <div class="metric-card">
+    <div class="mc-label">Profession</div>
+    <div class="mc-val" style="font-size:15px; font-weight:600;">{{ prof.libelle }}</div>
+  </div>
+  <div class="metric-card">
+    <div class="mc-label">Territoire</div>
+    {% if dept %}
+    <div class="mc-val" style="font-size:15px; font-weight:600;">{{ dept.code }} – {{ dept.libelle }}</div>
+    {% elif reg %}
+    <div class="mc-val" style="font-size:15px; font-weight:600;">{{ reg.libelle }} ({{ depts_interroges|length }} depts)</div>
+    {% endif %}
+  </div>
+  {% if poste %}
+  <div class="metric-card">
+    <div class="mc-label">Poste de Prescription</div>
+    <div class="mc-val" style="font-size:15px; font-weight:600;">{{ poste.libelle }}</div>
+  </div>
+  {% endif %}
+  <div class="metric-card">
+    <div class="mc-label">Volume Moyen Prescription {% if annee %}({{ annee }}){% else %}(Toutes années){% endif %}</div>
+    <div class="mc-val">{{ "{:,.0f}".format(total_boites).replace(',', ' ') }}</div>
+  </div>
+  <div class="metric-card">
+    <div class="mc-label">Montant Total Remboursé {% if annee %}({{ annee }}){% else %}(Toutes années){% endif %}</div>
+    <div class="mc-val">{{ "{:,.0f}".format(total_montant).replace(',', ' ') }} €</div>
+  </div>
+</div>
+
+<div id="pp-tab" class="viz-view active">
+  <div class="table-wrapper">
+    <table>
+      <thead>
+        <tr>
+          {% if mode == 'region' %}
+          <th>Département</th>
+          {% else %}
+          <th>Année</th>
+          {% endif %}
+          <th>Poste de Prescription</th>
+          <th>Volume Moyen</th>
+          <th>Montant Total</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for r in resultats %}
+        <tr>
+          {% if mode == 'region' %}
+          <td style="font-weight:500;">{{ r.departement_code }} – {{ r.departement_nom }}</td>
+          {% else %}
+          <td>{{ r.annee }}</td>
+          {% endif %}
+          <td style="font-weight:500;">{{ r.poste }}</td>
+          <td>{{ "{:,.0f}".format(r.nb_prescriptions).replace(',', ' ') }}</td>
+          <td style="font-weight:600; color:var(--navy);">{{ "{:,.2f}".format(r.montant_total).replace(',', ' ') }} €</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div id="pp-graph" class="viz-view">
+  {% if evolution %}
+  <div class="chart-card">
+    <canvas id="canvas-presc"></canvas>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function() {
+      const evoPresc = {{ evolution | tojson }};
+
+      const ctx = document.getElementById("canvas-presc").getContext("2d");
+      new Chart(ctx, {
+        type: "line",
+        data: {
+          labels: evoPresc.map(d => d.annee),
+          datasets: [{
+            label: "Montant total annuel des prescriptions (€)",
+            data: evoPresc.map(d => d.montant_total),
+            borderColor: "#1E3A8A",
+            backgroundColor: "rgba(30, 58, 138, 0.08)",
+            borderWidth: 2.5,
+            tension: 0.15,
+            fill: true,
+            pointRadius: 5,
+            pointHoverRadius: 7
+          }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: { legend: { position: "top" } },
+          scales: {
+            x: { title: { display: true, text: "Années disponibles (Historique)" } },
+            y: { beginAtZero: true, title: { display: true, text: "Montant Cumulé (€)" } }
+          }
+        }
+      });
+    });
+  </script>
+  {% else %}
+  <div class="empty"><strong>Pas de données d'évolution historique disponibles.</strong></div>
+  {% endif %}
+</div>
+</div>
+
+{% else %}
+<div class="empty">
+  <strong>Aucune prescription trouvée</strong>
+  Sélectionnez une profession et un département pour interroger l'API d'Ameli.
+</div>
+{% endif %}
+
+<script>
+  const BASE_URL = "{{ BASE_URL }}";
+
+  function switchTab(e, tabId) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+    e.currentTarget.classList.add('active');
+    document.getElementById(tabId).classList.add('active');
+  }
+
+  function setupCascade(regionId, deptId) {
+    const r = document.getElementById(regionId);
+    const d = document.getElementById(deptId);
+    if (!r || !d) return;
+
+    r.addEventListener("change", async (e) => {
+      const id = e.target.value;
+      d.innerHTML = '<option value="">— Tous les départements —</option>';
+      if (!id) return;  // si pas de région → option "tous" suffit
+      try {
+        const res = await fetch(`${BASE_URL}/api/departements/${id}`);
+        if (!res.ok) throw new Error("Erreur de récupération");
+        const depts = await res.json();
+        depts.forEach(dept => {
+          const o = document.createElement("option");
+          o.value = dept.id;
+          o.textContent = `${dept.code} – ${dept.libelle}`;
+          d.appendChild(o);
+        });
+      } catch (err) {
+        console.error("Erreur cascade :", err);
+        d.innerHTML = '<option value="">Erreur de chargement</option>';
+      }
+    });
+  }
+
+  setupCascade("pp-region", "pp-dept");
+
+  // Gestion du filtre Année selon le mode
+  // Mode A (département choisi) → année OPTIONNELLE : option "Toutes les années" présente
+  // Mode B (région seule)       → année OBLIGATOIRE : option "Toutes les années" absente, 2023 pré-sélectionné
+  function updateAnneeFiltre() {
+    const deptSel     = document.getElementById("pp-dept");
+    const anneeHint   = document.getElementById("annee-hint");
+    const anneeSelect = document.getElementById("filtre-annee");
+    if (!deptSel || !anneeSelect) return;
+
+    const hasDept = deptSel.value && deptSel.value !== "";
+    const optTout = anneeSelect.querySelector('option[value=""]');
+
+    if (hasDept) {
+      // Mode A : département → "Toutes les années" disponible
+      if (!optTout) {
+        const o = document.createElement("option");
+        o.value = "";
+        o.textContent = "— Toutes les années —";
+        anneeSelect.insertBefore(o, anneeSelect.firstChild);
+      }
+      if (anneeHint) anneeHint.style.display = "none";
+    } else {
+      // Mode B : région seule → retirer l'option "Toutes les années", forcer une année
+      if (optTout) optTout.remove();
+      if (anneeHint) anneeHint.style.display = "inline";
+      // Si aucune année sélectionnée, pré-sélectionner 2023
+      if (!anneeSelect.value) anneeSelect.value = "2023";
+    }
+  }
+
+  // Écouter les changements du select département
+  const ppDeptSelect = document.getElementById("pp-dept");
+  if (ppDeptSelect) {
+    ppDeptSelect.addEventListener("change", updateAnneeFiltre);
+  }
+  // Écouter aussi le changement de région (qui vide le département)
+  const ppRegionSelect = document.getElementById("pp-region");
+  if (ppRegionSelect) {
+    ppRegionSelect.addEventListener("change", () => {
+      // Après le remplissage du select département par la cascade, on recalcule
+      setTimeout(updateAnneeFiltre, 100);
+    });
+  }
+  // Init au chargement de la page
+  updateAnneeFiltre();
+
+
+
+  function switchViz(prefix, type, btn) {
+    document.querySelectorAll(`#${prefix}-tab, #${prefix}-graph`).forEach(v => v.classList.remove("active"));
+    document.getElementById(`${prefix}-${type}`).classList.add("active");
+    btn.closest(".viz-switcher").querySelectorAll(".viz-btn").forEach(b => b.classList.remove("active"));
+    btn.classList.add("active");
+  }
+</script>
+
+{% endblock %}

@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titre %}Message envoyé · AMELI Data{% endblock %}
+{% block contenu %}
+
+<div style="max-width:520px;margin:3rem auto;text-align:center">
+
+  <div style="width:64px;height:64px;background:#EFF6FF;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:0 auto 1.25rem">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  </div>
+
+  <h1 style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:0.5rem">Message envoyé !</h1>
+  <p style="color:var(--muted);font-size:14px;margin-bottom:0.25rem">
+    Merci <strong>{{ nom }}</strong>, votre message a bien été reçu.
+  </p>
+  <p style="color:var(--muted);font-size:14px;margin-bottom:2rem">
+    Nous vous répondrons à <strong>{{ email }}</strong> sous 48 h ouvrées.
+  </p>
+
+  <div style="background:var(--white);border:1px solid var(--border);border-radius:10px;padding:1.25rem 1.5rem;text-align:left;margin-bottom:2rem">
+    <div style="font-size:11.5px;font-weight:600;color:var(--muted);text-transform:uppercase;letter-spacing:.05em;margin-bottom:10px">Récapitulatif</div>
+    <table style="width:100%;font-size:13.5px;border-collapse:collapse">
+      <tr><td style="padding:5px 0;color:var(--muted);width:120px">Nom</td><td style="color:var(--text);font-weight:500">{{ nom }}</td></tr>
+      <tr><td style="padding:5px 0;color:var(--muted)">E-mail</td><td style="color:var(--text);font-weight:500">{{ email }}</td></tr>
+      <tr><td style="padding:5px 0;color:var(--muted)">Sujet</td><td style="color:var(--text);font-weight:500">{{ sujet_libelle }}</td></tr>
+      <tr style="vertical-align:top"><td style="padding:5px 0;color:var(--muted)">Message</td><td style="color:var(--text)">{{ message }}</td></tr>
+    </table>
+  </div>
+
+  <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap">
+    <a href="{{ url_for('accueil.index') }}" class="btn btn-primary">← Retour à l'accueil</a>
+    <a href="{{ url_for('contact.index') }}" class="btn btn-ghost">Envoyer un autre message</a>
+  </div>
+
+</div>
+
+{% endblock %}

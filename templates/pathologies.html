@@ -1,14 +1,9 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMELI Data – Pathologies</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
-  <main>
+{% extends "base.html" %}
+
+{% block titre %}Pathologies{% endblock %}
+
+{% block contenu %}
+  <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
     <h1 style="font-size:2rem; margin-bottom:24px;">Pathologies</h1>
 
     <div class="patho-controls">
@@ -105,19 +100,16 @@
       </div>
 
       <div id="viz-map" style="display:none;">
-        <div class="map-title" id="map-title">Carte de France</div>
-        <div class="map-grid" id="map-grid"></div>
-        <div class="map-legend">
-          <span>Faible</span>
-          <div class="legend-bar"></div>
-          <span>Élevé</span>
+        <div class="map-mode-controls">
+          <label for="sel-map-mode">Affichage :</label>
+          <select id="sel-map-mode" onchange="setMapMode(this.value)">
+            <option value="region">Par régions</option>
+            <option value="departement">Par départements</option>
+          </select>
         </div>
-        <div class="map-range" id="map-range"></div>
-        <p class="map-note">Note : Carte simplifiée. Les valeurs affichées sont des moyennes par région.</p>
+        <div id="plotly-div" class="plotly-chart"></div>
       </div>
     </div>
-  </main>
-
   <script>
     function switchTab(e, tabId) {
       document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
@@ -135,6 +127,7 @@
 
     const apiPathologiesUrl = "{{ url_for('api.pathologies') }}";
     let currentViz = 'table';
+    let currentMapMode = 'region';
     let pathologiesData = [];
 
     const apiRegionsUrl = "{{ url_for('api.regions') }}";
@@ -268,7 +261,11 @@
       const regionSelect = document.getElementById('sel-region');
       const region = regionSelect.value !== 'all' ? regionSelect.selectedOptions[0]?.dataset.code : null;
       const departement = document.getElementById('sel-departement').value;
-      pathologiesData = await fetchPathologiesData(year, path, region, departement);
+      if (currentViz === 'map') {
+        pathologiesData = await fetchPathologiesData(year, path, null, null);
+      } else {
+        pathologiesData = await fetchPathologiesData(year, path, region, departement);
+      }
       const data = getFilteredData();
       document.getElementById('viz-table').style.display = 'none';
       document.getElementById('viz-chart').style.display = 'none';
@@ -343,28 +340,89 @@
       });
     }
 
-    function renderMap(data, ind) {
-      document.getElementById('viz-map').style.display = 'block';
-      document.getElementById('map-title').textContent = 'Carte de France – ' + getIndicatorLabel(ind);
-      const regionAcc = {};
-      data.forEach(d => {
-        if (!regionAcc[d.region]) regionAcc[d.region] = { sum: 0, count: 0 };
-        regionAcc[d.region].sum += d[ind]; regionAcc[d.region].count++;
-      });
-      const regions = Object.entries(regionAcc).map(([r, v]) => ({ region: r, value: v.count ? v.sum / v.count : 0 }));
-      const vals = regions.length ? regions.map(r => r.value) : [0];
-      const minV = Math.min(...vals), maxV = Math.max(...vals);
-      function getColor(v) {
-        const ratio = (v - minV) / (maxV - minV || 1);
-        return `rgb(${Math.round(255*ratio)},100,${Math.round(255*(1-ratio))})`;
+    const mapGeoJsonCache = { region: null, departement: null };
+
+    async function loadFranceGeoJson(type) {
+      if (mapGeoJsonCache[type]) return mapGeoJsonCache[type];
+      const urls = {
+        region: 'https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/regions-version-simplifiee.geojson',
+        departement: 'https://raw.githubusercontent.com/gregoiredavid/france-geojson/master/departements-version-simplifiee.geojson',
+      };
+      const resp = await fetch(urls[type]);
+      if (!resp.ok) {
+        console.error('Impossible de charger le geojson de la France', resp.statusText);
+        return null;
       }
-      document.getElementById('map-grid').innerHTML = regions.map(r => `
-        <div class="map-region" style="background:${getColor(r.value)}">
-          <div class="region-name">${r.region}</div>
-          <div class="region-value">${formatValue(r.value, ind)}</div>
-        </div>
-      `).join('');
-      document.getElementById('map-range').textContent = `${formatValue(minV, ind)} – ${formatValue(maxV, ind)}`;
+      mapGeoJsonCache[type] = await resp.json();
+      return mapGeoJsonCache[type];
+    }
+
+    function setMapMode(mode) {
+      currentMapMode = mode;
+      updateViz();
+    }
+
+    async function renderMap(data, ind) {
+      document.getElementById('viz-map').style.display = 'block';
+      const buckets = {};
+      data.forEach(d => {
+        const code = currentMapMode === 'region'
+          ? String(d.region || '').padStart(2, '0')
+          : String(d.departement || '').padStart(2, '0');
+        const label = currentMapMode === 'region'
+          ? (d.region_libelle || d.region || 'Inconnue')
+          : (d.departement_libelle || d.departement || 'Inconnu');
+        if (!code) return;
+        if (!buckets[code]) buckets[code] = { sum: 0, count: 0, label, values: [] };
+        buckets[code].sum += Number(d[ind] || 0);
+        buckets[code].count += 1;
+        buckets[code].values.push(Number(d[ind] || 0));
+      });
+      const features = Object.entries(buckets).map(([code, value]) => ({
+        code,
+        label: value.label,
+        value: ind === 'nombre_patients'
+          ? value.sum
+          : (value.count ? value.values.reduce((acc, cur) => acc + cur, 0) / value.count : 0),
+      }));
+      if (!features.length) {
+        document.getElementById('plotly-div').innerHTML = '<div class="map-empty">Aucune donnée disponible pour cette sélection.</div>';
+        return;
+      }
+      const france = await loadFranceGeoJson(currentMapMode);
+      if (!france) {
+        document.getElementById('plotly-div').innerHTML = '<div class="map-empty">Impossible de charger la carte de France.</div>';
+        return;
+      }
+      const locations = features.map(f => f.code);
+      const z = features.map(f => f.value);
+      const hovertext = features.map(f => f.label);
+      const trace = {
+        type: 'choropleth',
+        geojson: france,
+        locations,
+        z,
+        featureidkey: 'properties.code',
+        colorscale: 'Portland',
+        marker: { line: { width: 0.5, color: 'white' } },
+        colorbar: { title: getIndicatorLabel(ind), thicknessmode: 'fraction', thickness: 0.03 },
+        hovertext,
+        hovertemplate: '<b>%{hovertext}</b><br>' + `${getIndicatorLabel(ind)}: %{z}<extra></extra>`,
+      };
+      const layout = {
+        title: { text: `Carte de France – ${getIndicatorLabel(ind)} (${currentMapMode === 'region' ? 'régions' : 'départements'})`, font: { size: 18 } },
+        geo: {
+          scope: 'europe',
+          projection: { type: 'mercator' },
+          showland: true,
+          landcolor: '#f2f2f2',
+          showframe: false,
+          showcountries: false,
+          fitbounds: 'locations',
+        },
+        margin: { t: 70, l: 0, r: 0, b: 0 },
+      };
+      Plotly.react('plotly-div', [trace], layout, { responsive: true });
     }
 
     async function onRegionChange() {
@@ -396,5 +454,4 @@
 
     initializePathologies();
   </script>
-</body>
-</html>
+{% endblock %}
