@@ -1,18 +1,243 @@
-<!DOCTYPE html>
-<html lang="fr">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>AMELI Data – Professionnels</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
-</head>
-<body>
-  <script src="{{ url_for('static', filename='js/nav.js') }}"></script>
-  <main>
-    <div class="content-box">
-      <h1>Professionnels de santé libéraux</h1>
-      <p style="color:#6b7280;">Cette section affichera les statistiques sur les professionnels de santé libéraux.</p>
+{% extends "base.html" %}
+{% block titre %}Professionnels de santé · AMELI Data{% endblock %}
+{% block contenu %}
+
+<h1 class="page-heading">Professionnels de santé libéraux</h1>
+
+<div class="filters-panel">
+  <form action="{{ url_for('dashboard.professionnels') }}" method="get" style="display:contents">
+    <div class="filter-group">
+      <label>Profession</label>
+      <select name="profession_id" required>
+        <option value="">— Choisir —</option>
+        {% for p in professions %}
+        <option value="{{ p.id }}" {% if prof and prof.id==p.id %}selected{% endif %}>{{ p.libelle }}</option>
+        {% endfor %}
+      </select>
     </div>
-  </main>
-</body>
-</html>
+    <div class="filter-group">
+      <label>Région</label>
+      <select name="region_id" id="rp-region">
+        <option value="">— Choisir —</option>
+        {% for r in regions %}
+        <option value="{{ r.id }}" {% if reg and reg.id==r.id %}selected{% endif %}>{{ r.libelle }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Département</label>
+      <select name="departement_id" id="rp-dept">
+        <option value="">— Tous les départements —</option>
+      </select>
+    </div>
+    <div class="filter-group">
+      <label>Année</label>
+      <select name="annee" required>
+        {% for a in range(2023, 2014, -1) %}
+        <option value="{{ a }}" {% if annee==a %}selected{% endif %}>{{ a }}</option>
+        {% endfor %}
+      </select>
+    </div>
+    <button type="submit" class="btn btn-primary">Afficher</button>
+  </form>
+</div>
+
+{% if resultats is defined %}
+
+<div class="metrics-row">
+  <div class="metric-card"><div class="mc-label">Profession</div><div class="mc-val" style="font-size:14px">{{ prof.libelle }}</div></div>
+  <div class="metric-card"><div class="mc-label">Territoire</div><div class="mc-val" style="font-size:14px">{{ territoire_label }}</div></div>
+  <div class="metric-card"><div class="mc-label">Année</div><div class="mc-val">{{ annee }}</div></div>
+  <div class="metric-card"><div class="mc-label">Résultats</div><div class="mc-val">{{ resultats | length }}</div></div>
+</div>
+
+<div class="viz-switcher">
+  <button class="viz-btn active" onclick="switchViz('tab',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
+    Tableau
+  </button>
+  <button class="viz-btn" onclick="switchViz('graph',this)">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Graphiques
+  </button>
+</div>
+
+<div id="view-tab" class="viz-view active">
+  {% if resultats %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Année</th><th>Effectif</th><th>Densité (/ 100 000 hab.)</th></tr></thead>
+      <tbody>
+        {% for r in resultats %}
+        <tr><td>{{ r.annee }}</td><td>{{ r.effectif }}</td><td>{{ r.densite }}</td></tr>
+        {% endfor %}
+      </tbody>
+    </table>
+  </div>
+  {% else %}
+  <div class="empty"><strong>Aucune donnée</strong>Aucun résultat pour cette sélection.</div>
+  {% endif %}
+</div>
+
+<div id="view-graph" class="viz-view">
+  <div class="charts-grid">
+
+    {# Anneau sexe — données réelles API #}
+    <div class="chart-card">
+      <p class="chart-label">Répartition par sexe</p>
+      {% if par_sexe %}
+      <div class="chart-legend" id="legend-sexe"></div>
+      <div style="position:relative;height:230px">
+        <canvas id="c-sexe" role="img" aria-label="Anneau répartition par sexe">Données par sexe.</canvas>
+      </div>
+      {% else %}
+      <div class="empty"><strong>Non disponible</strong>Données par sexe non disponibles pour cette sélection.</div>
+      {% endif %}
+    </div>
+
+    {# Camembert âge — données réelles API #}
+    <div class="chart-card">
+      <p class="chart-label">Répartition par tranche d'âge</p>
+      {% if par_age %}
+      <div class="chart-legend" id="legend-age"></div>
+      <div style="position:relative;height:230px">
+        <canvas id="c-age" role="img" aria-label="Camembert répartition par tranche d'âge">Données par tranche d'âge.</canvas>
+      </div>
+      {% else %}
+      <div class="empty"><strong>Non disponible</strong>Données par tranche d'âge non disponibles pour cette sélection.</div>
+      {% endif %}
+    </div>
+
+    {# Courbe évolution — données réelles API #}
+    <div class="chart-card chart-card--full">
+      <p class="chart-label">Évolution effectif et densité sur plusieurs années</p>
+      <div class="chart-legend">
+        <span><b style="background:#1E3A8A"></b>Effectif</span>
+        <span><b style="background:#2563EB;border:1px dashed #2563EB"></b>Densité</span>
+      </div>
+      {% if evolution %}
+      <div style="position:relative;height:220px">
+        <canvas id="c-evo" role="img" aria-label="Courbe évolution effectif et densité">Données d'évolution.</canvas>
+      </div>
+      {% else %}
+      <div class="empty"><strong>Pas de données d'évolution disponibles.</strong></div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+  <script>
+    const parSexe = {{ par_sexe | tojson }};
+    const parAge  = {{ par_age  | tojson }};
+    const evo     = {{ evolution | tojson }};
+    const BLUES = ['#1E3A8A','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899','#84CC16'];
+    const no = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}};
+
+    // ── Anneau par sexe ──
+    if (parSexe.length > 0) {
+      const sexeLabels = parSexe.map(r => r.libelle_sexe || '');
+      const sexeVals   = parSexe.map(r => parseInt(r.effectif) || 0);
+      const legSexe = document.getElementById('legend-sexe');
+      if (legSexe) sexeLabels.forEach((l,i) => {
+        const s = document.createElement('span');
+        s.innerHTML = `<b style="background:${BLUES[i]}"></b>${l}`;
+        legSexe.appendChild(s);
+      });
+      new Chart(document.getElementById('c-sexe'), {
+        type: 'doughnut',
+        data: {labels:sexeLabels, datasets:[{data:sexeVals, backgroundColor:BLUES, borderWidth:2, borderColor:'#fff'}]},
+        options: {...no, cutout:'65%', plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>' '+c.label+' : '+c.parsed.toLocaleString('fr-FR')}}}}
+      });
+    }
+
+    // ── Camembert par tranche d'âge ──
+    if (parAge.length > 0) {
+      const ageLabels = parAge.map(r => r.libelle_classe_age || '');
+      const ageVals   = parAge.map(r => parseInt(r.effectif) || 0);
+      const legAge = document.getElementById('legend-age');
+      if (legAge) ageLabels.forEach((l,i) => {
+        const s = document.createElement('span');
+        s.innerHTML = `<b style="background:${BLUES[i%BLUES.length]}"></b>${l}`;
+        legAge.appendChild(s);
+      });
+      new Chart(document.getElementById('c-age'), {
+        type: 'pie',
+        data: {labels:ageLabels, datasets:[{data:ageVals, backgroundColor:BLUES, borderWidth:2, borderColor:'#fff'}]},
+        options: {...no, plugins:{legend:{display:false},
+          tooltip:{callbacks:{label:c=>' '+c.label+' : '+c.parsed.toLocaleString('fr-FR')}}}}
+      });
+    }
+
+    // ── Courbe évolution ──
+    if (evo.length > 0) {
+      const years = evo.map(d => d.annee ? String(d.annee).slice(0,4) : '');
+      const effs  = evo.map(d => parseInt(d.effectif)  || 0);
+      const dens  = evo.map(d => parseFloat(d.densite) || 0);
+      new Chart(document.getElementById('c-evo'), {
+        type: 'line',
+        data: {
+          labels: years,
+          datasets: [
+            {label:'Effectif', data:effs, borderColor:'#1E3A8A', backgroundColor:'rgba(30,58,138,.07)',
+             tension:.35, fill:true, pointRadius:4, yAxisID:'y'},
+            {label:'Densité',  data:dens, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,.07)',
+             tension:.35, fill:true, pointRadius:4, borderDash:[5,4], yAxisID:'y1'}
+          ]
+        },
+        options: {
+          responsive:true, maintainAspectRatio:false,
+          plugins:{legend:{display:false}},
+          scales:{
+            y: {position:'left',  beginAtZero:false, title:{display:true,text:'Effectif',font:{size:11}}},
+            y1:{position:'right', beginAtZero:false, grid:{drawOnChartArea:false}, title:{display:true,text:'Densité',font:{size:11}}}
+          }
+        }
+      });
+    }
+  </script>
+</div>
+
+{% else %}
+<div class="empty">
+  <strong>Sélectionnez vos filtres</strong>
+  Choisissez une profession, un département et une année, puis cliquez sur Afficher.
+</div>
+{% endif %}
+
+<style>
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card{background:var(--white,#fff);border:1px solid var(--border,#E2E8F0);border-radius:10px;padding:14px 16px}
+.chart-card--full{grid-column:1/-1}
+.chart-label{font-size:12px;font-weight:600;color:var(--muted,#64748B);margin-bottom:8px}
+#legend-sexe,#legend-age,.chart-legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px;color:var(--muted,#64748B)}
+#legend-sexe span,#legend-age span,.chart-legend span{display:flex;align-items:center;gap:4px}
+#legend-sexe b,#legend-age b,.chart-legend b{width:9px;height:9px;border-radius:2px;display:inline-block;flex-shrink:0}
+@media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+</style>
+
+<script>const BASE_URL = "{{ BASE_URL }}";</script>
+<script>
+document.getElementById("rp-region").addEventListener("change", async (e) => {
+  const id = e.target.value;
+  const d = document.getElementById("rp-dept");
+  d.innerHTML = '<option value="">— Tous les départements —</option>';
+  if (!id) return;
+  try {
+    const res = await fetch(`${BASE_URL}/api/departements/${id}`);
+    (await res.json()).forEach(dept => {
+      const o = document.createElement("option");
+      o.value = dept.id; o.textContent = `${dept.code} – ${dept.libelle}`;
+      d.appendChild(o);
+    });
+  } catch { d.innerHTML = '<option value="">Erreur</option>'; }
+});
+function switchViz(type, btn) {
+  document.querySelectorAll(".viz-view").forEach(v => v.classList.remove("active"));
+  document.getElementById("view-" + type).classList.add("active");
+  btn.closest(".viz-switcher").querySelectorAll(".viz-btn").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+}
+</script>
+{% endblock %}
