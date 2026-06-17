@@ -151,3 +151,20 @@ def professionnels():
                                par_age=par_age or [])
     finally:
         session.close()
+
+
+@bp_dashboard.route("/accueil")
+def accueil():
+    """Rendu de la page d'accueil depuis le dashboard."""
+    session = Session()
+    try:
+        regions, professions, postes = _get_listes(session)
+        return render_template("accueil.html", regions=regions, professions=professions)
+    finally:
+        session.close()
+
+
+@bp_dashboard.route("/pathologies")
+def pathologies():
+    """Page de visualisation des pathologies."""
+    return render_template("pathologies.html")
