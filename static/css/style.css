@@ -88,6 +88,12 @@ main { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
 
 .viz-container { background: white; padding: 24px; border-radius: 8px; box-shadow: 0 1px 6px rgba(0,0,0,0.1); }
 
+.map-mode-controls { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+.map-mode-controls label { font-weight: 600; }
+.map-mode-controls select { padding: 8px 10px; border: 1px solid #d1d5db; border-radius: 4px; font-size: 0.95rem; }
+.plotly-chart { width: 100%; min-height: 520px; }
+.map-empty { display: flex; align-items: center; justify-content: center; min-height: 320px; color: #6b7280; font-size: 1rem; }
+
 .data-table { width: 100%; border-collapse: collapse; }
 .data-table thead tr { background: #1e3a8a; color: white; }
 .data-table th { padding: 12px 16px; text-align: left; font-weight: 600; white-space: nowrap; }
