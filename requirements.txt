@@ -1,0 +1,6 @@
+flask>=3.0
+sqlalchemy>=2.0
+pymysql>=1.1
+python-dotenv>=1.0
+requests>=2.31
+cachetools>=5.3

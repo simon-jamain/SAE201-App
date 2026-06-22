@@ -1,0 +1,30 @@
+{% extends "base.html" %}
+
+{% block titre %}Connexion{% endblock %}
+
+{% block contenu %}
+<div class="content-box auth-box">
+  <h1>Se connecter</h1>
+
+  {% if erreur %}
+    <p class="auth-error">{{ erreur }}</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.connexion') }}" class="auth-form">
+    <div class="auth-field">
+      <label for="identifiant">Nom d'utilisateur</label>
+      <input type="text" id="identifiant" name="identifiant" required autofocus>
+    </div>
+    <div class="auth-field">
+      <label for="mot_de_passe">Mot de passe</label>
+      <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+    </div>
+    <button type="submit" class="btn-primary">Se connecter</button>
+  </form>
+
+  <p class="auth-switch">
+    Pas encore de compte ?
+    <a href="{{ url_for('auth.creer_compte') }}">Créer un compte</a>
+  </p>
+</div>
+{% endblock %}
