@@ -3,43 +3,10 @@ from models.db import Session
 from models.dimensions import Departement, Region
 from services.ameli_api import AmeliAPI
 
-bp_api = Blueprint("api", __name__, url_prefix="/api")
+bp_pathologies_api = Blueprint("pathologies_api", __name__, url_prefix="/api")
 
 # Instance unique du service API (r├®utilise la session HTTP)
 api = AmeliAPI()
-
-
-@bp_api.route("/regions")
-def regions():
-    """Retourne la liste des r├®gions au format JSON."""
-    session = Session()
-    try:
-        regions = session.query(Region).order_by(Region.code).all()
-        return jsonify([
-            {"id": r.id, "code": r.code, "libelle": r.libelle}
-            for r in regions
-        ])
-    finally:
-        session.close()
-
-
-@bp_api.route("/departements/<int:region_id>")
-def departements(region_id):
-    """Retourne les d├®partements d'une r├®gion au format JSON."""
-    session = Session()
-    try:
-        depts = (
-            session.query(Departement)
-            .filter_by(region_id=region_id)
-            .order_by(Departement.code)
-            .all()
-        )
-        return jsonify([
-            {"id": d.code, "code": d.code, "libelle": d.libelle}
-            for d in depts
-        ])
-    finally:
-        session.close()
 
 
 def _annotate_pathology_labels(rows):
@@ -76,9 +43,9 @@ def _annotate_pathology_labels(rows):
     return rows
 
 
-@bp_api.route("/pathologies")
+@bp_pathologies_api.route("/pathologies")
 def pathologies():
-    """Retourne des donn├®es de pathologies depuis l'API AMELI."""
+    """Retourne des donnees de pathologies depuis l'API AMELI."""
     year = request.args.get("year", type=int)
     pathologie = request.args.get("pathologie", default="all", type=str)
     region = request.args.get("region", type=str)

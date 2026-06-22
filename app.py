@@ -4,6 +4,7 @@ from config import Config
 from controllers.accueil import bp_accueil
 from controllers.effectifs import bp_effectifs
 from controllers.api import bp_api
+from controllers.pathologies_api import bp_pathologies_api
 from controllers.contact import bp_contact
 from controllers.dashboard import bp_dashboard
 from controllers.honoraires import bp_honoraires
@@ -32,6 +33,7 @@ def inject_base_url():
 app.register_blueprint(bp_accueil)
 app.register_blueprint(bp_effectifs)
 app.register_blueprint(bp_api)
+app.register_blueprint(bp_pathologies_api)
 app.register_blueprint(bp_contact)
 app.register_blueprint(bp_dashboard)
 app.register_blueprint(bp_honoraires)

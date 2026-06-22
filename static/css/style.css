@@ -239,6 +239,16 @@ footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; 
 .table-wrapper th, .table-wrapper td { padding: 14px 16px; border-bottom: 1px solid #e5e7eb; font-size: 0.95rem; }
 .table-wrapper th { background: #f8fafc; color: #1f2937; font-weight: 700; text-align: left; }
 .table-wrapper tbody tr:nth-child(even) { background: #f8fafc; }
+.table-export-controls {
+  display: flex;
+  justify-content: flex-end;
+  margin-bottom: 10px;
+}
+.table-export-btn {
+  padding: 0.5rem 0.9rem;
+  border-radius: 10px;
+  font-size: 0.85rem;
+}
 .empty {
   background: white;
   border: 1px solid #e2e8f0;
@@ -358,6 +368,334 @@ footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; 
 .page-title  { font-size: 2rem; margin-bottom: 24px; }
 .viz-hint    { font-size: .8rem; color: #6b7280; margin: 12px 0 0; text-align: center; }
 .num         { text-align: right; }
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PAGES D'ERREUR
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.error-wrap {
+  display: grid;
+  grid-template-columns: minmax(120px, 180px) 1fr;
+  gap: 20px;
+  align-items: start;
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 16px;
+  padding: 28px;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.08);
+  max-width: 980px;
+  margin: 0 auto;
+}
+
+.error-code {
+  font-size: clamp(3rem, 11vw, 6rem);
+  line-height: 1;
+  font-weight: 800;
+  letter-spacing: -0.04em;
+  color: #1e3a8a;
+  text-align: center;
+}
+
+.error-body {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.error-tag {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  border-radius: 9999px;
+  padding: 6px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.tag-404 {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+
+.tag-500 {
+  background: #fff1f2;
+  color: #be123c;
+}
+
+.tag-api,
+.tag-def {
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.error-title {
+  font-size: clamp(1.4rem, 3vw, 1.9rem);
+  line-height: 1.25;
+  color: #0f172a;
+}
+
+.error-msg {
+  color: #475569;
+  font-size: 1rem;
+}
+
+.error-detail {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px 16px;
+  color: #334155;
+}
+
+.error-detail p {
+  margin: 0 0 8px;
+}
+
+.error-detail p:last-child {
+  margin-bottom: 0;
+}
+
+.error-detail ul {
+  margin: 0;
+  padding-left: 18px;
+}
+
+.error-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  margin-top: 4px;
+}
+
+.error-404 .error-code {
+  color: #2563eb;
+}
+
+.error-500 .error-code {
+  color: #be123c;
+}
+
+@media (max-width: 780px) {
+  .error-wrap {
+    grid-template-columns: 1fr;
+    text-align: left;
+    padding: 20px;
+  }
+
+  .error-code {
+    text-align: left;
+  }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════
+   PAGE CONTACT
+   ═══════════════════════════════════════════════════════════════════════ */
+
+.contact-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 2fr) minmax(0, 1fr);
+  gap: 18px;
+  align-items: start;
+}
+
+.form-card,
+.info-card {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.06);
+}
+
+.form-card {
+  padding: 20px;
+}
+
+.form-card h3 {
+  margin-bottom: 14px;
+  color: #0f172a;
+}
+
+.field {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.field label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.field input,
+.field select,
+.field textarea {
+  width: 100%;
+  border: 1px solid #cbd5e1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 0.95rem;
+  color: #0f172a;
+  background: #fff;
+}
+
+.field textarea {
+  resize: vertical;
+  min-height: 130px;
+}
+
+.field input:focus,
+.field select:focus,
+.field textarea:focus {
+  outline: 2px solid #bfdbfe;
+  outline-offset: 1px;
+  border-color: #2563eb;
+}
+
+.contact-submit {
+  margin-top: 0.5rem;
+}
+
+.alert {
+  border-radius: 10px;
+  padding: 10px 12px;
+  margin-bottom: 12px;
+  font-size: 0.9rem;
+}
+
+.alert-error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #b91c1c;
+}
+
+.info-cards {
+  display: grid;
+  gap: 12px;
+}
+
+.info-card {
+  padding: 14px;
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.ic-icon {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #eff6ff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.info-card strong {
+  color: #0f172a;
+}
+
+.info-card p {
+  margin-top: 4px;
+  color: #475569;
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+/* Confirmation contact */
+.contact-confirm-wrap {
+  max-width: 520px;
+  margin: 3rem auto;
+  text-align: center;
+}
+
+.contact-confirm-icon {
+  width: 64px;
+  height: 64px;
+  background: #eff6ff;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 1.25rem;
+}
+
+.contact-confirm-title {
+  font-size: 22px;
+  font-weight: 700;
+  color: #0f172a;
+  margin-bottom: 0.5rem;
+}
+
+.contact-confirm-subtitle {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 0.25rem;
+}
+
+.contact-confirm-subtitle-bottom {
+  margin-bottom: 2rem;
+}
+
+.contact-confirm-summary {
+  background: #ffffff;
+  border: 1px solid #e2e8f0;
+  border-radius: 10px;
+  padding: 1.25rem 1.5rem;
+  text-align: left;
+  margin-bottom: 2rem;
+}
+
+.contact-confirm-summary-title {
+  font-size: 11.5px;
+  font-weight: 600;
+  color: #64748b;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-bottom: 10px;
+}
+
+.contact-confirm-table {
+  width: 100%;
+  font-size: 13.5px;
+  border-collapse: collapse;
+}
+
+.contact-confirm-row-top {
+  vertical-align: top;
+}
+
+.contact-confirm-key {
+  padding: 5px 0;
+  color: #64748b;
+  width: 120px;
+}
+
+.contact-confirm-value {
+  color: #0f172a;
+  font-weight: 500;
+}
+
+.contact-confirm-message {
+  font-weight: 400;
+}
+
+.contact-confirm-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+@media (max-width: 900px) {
+  .contact-grid {
+    grid-template-columns: 1fr;
+  }
+}
 .results h2  { margin-top: 0; }
 
 /* Utilitaires (remplacent les anciens style="..." inline) */

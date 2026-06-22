@@ -2,7 +2,7 @@
 {% block titre %}Erreur · AMELI Data{% endblock %}
 {% block contenu %}
 
-<div class="error-wrap">
+<div class="error-wrap {% if code == 404 %}error-404{% elif code == 500 %}error-500{% endif %}">
   <div class="error-code">{% if code %}{{ code }}{% else %}!{% endif %}</div>
   <div class="error-body">
 

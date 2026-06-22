@@ -13,10 +13,10 @@
     <h2>Pathologies</h2>
     <p>Explorez les données sur les différentes pathologies et maladies chroniques.</p>
   </a>
-  <a class="card" href="{{ url_for('accueil.acces_soins') }}">
-    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M21 10c0 7-9 13-9 13S3 17 3 10a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-    <h2>Accès aux soins</h2>
-    <p>Visualisez l'accessibilité aux soins de santé par région.</p>
+  <a class="card" href="{{ url_for('dashboard.medicaments') }}">
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="6" y="4" width="12" height="16" rx="2"/><path d="M9 4.5h6"/><path d="M10 11h4"/><path d="M12 9v4"/><path d="M9 15h6"/></svg>
+    <h2>Prescription</h2>
+    <p>Consultez les indicateurs de prescriptions de médicaments par territoire et profession.</p>
   </a>
   <a class="card" href="{{ url_for('dashboard.professionnels') }}">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -24,7 +24,7 @@
     <p>Consultez les statistiques sur les professionnels de santé libéraux.</p>
   </a>
   <a class="card" href="{{ url_for('honoraires.afficher') }}">
-    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><rect x="2" y="7" width="20" height="14" rx="2" ry="2"/><path d="M16 7V5a2 2 0 0 0-2-2h-4a2 2 0 0 0-2 2v2"/><line x1="12" y1="12" x2="12" y2="16"/><line x1="10" y1="14" x2="14" y2="14"/></svg>
+    <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M2 8h20a1 1 0 0 1 1 1v6a1 1 0 0 1-1 1H2a1 1 0 0 1-1-1V9a1 1 0 0 1 1-1z"/><line x1="6" y1="5" x2="18" y2="5"/><circle cx="12" cy="12" r="2"/></svg>
     <h2>Honoraires</h2>
     <p>Analysez les honoraires des professionnels de santé par territoire.</p>
   </a>

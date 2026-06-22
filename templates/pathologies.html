@@ -4,6 +4,7 @@
 
 {% block contenu %}
   <script src="https://cdn.plot.ly/plotly-2.24.2.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <h1 style="font-size:2rem; margin-bottom:24px;">Pathologies</h1>
 
     <div class="patho-controls">
@@ -36,7 +37,7 @@
         <div class="filters-grid">
           <div class="filter-group">
             <label for="sel-indicator">Indicateur</label>
-            <select id="sel-indicator" onchange="updateViz()">
+            <select id="sel-indicator">
               <option value="nombre_patients">Nombre de patients</option>
               <option value="taux_prevalence">Taux de prévalence (%)</option>
             </select>
@@ -44,6 +45,7 @@
           <div class="filter-group">
             <label for="sel-year">Année</label>
             <select id="sel-year">
+              <option value="all">Toutes les années</option>
               <option value="2023">2023</option>
               <option value="2022">2022</option>
               <option value="2021">2021</option>
@@ -57,19 +59,19 @@
           </div>
           <div class="filter-group">
             <label for="sel-region">Région</label>
-            <select id="sel-region" onchange="onRegionChange()">
+            <select id="sel-region">
               <option value="all">Toutes les régions</option>
             </select>
           </div>
           <div class="filter-group">
             <label for="sel-departement">Département</label>
-            <select id="sel-departement" onchange="updateViz()">
+            <select id="sel-departement">
               <option value="all">Tous les départements</option>
             </select>
           </div>
           <div class="filter-group">
             <label for="sel-pathology">Pathologie</label>
-            <select id="sel-pathology" onchange="updateViz()">
+            <select id="sel-pathology">
               <option value="all">Toutes les pathologies</option>
               <option value="Diabète">Diabète</option>
               <option value="Hypertension artérielle">Hypertension artérielle</option>
@@ -93,10 +95,20 @@
             <tbody id="table-body"></tbody>
           </table>
         </div>
+        <div class="table-pagination" id="patho-table-pagination" style="display:none;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
+          <span id="patho-page-info" style="font-size:0.9rem;color:#64748b;"></span>
+          <div style="display:flex;gap:8px;">
+            <button type="button" id="patho-prev-page" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Precedent</button>
+            <button type="button" id="patho-next-page" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Suivant</button>
+          </div>
+        </div>
       </div>
 
-      <div id="viz-chart" style="display:none; overflow-x:auto;">
-        <canvas id="chart-canvas" height="500"></canvas>
+      <div id="viz-chart" style="display:none;">
+        <div class="chart-card" style="height:480px;">
+          <canvas id="chart-canvas"></canvas>
+          <div id="chart-empty" class="empty" style="display:none;">Aucune donnee disponible pour cette selection.</div>
+        </div>
       </div>
 
       <div id="viz-map" style="display:none;">
@@ -125,10 +137,13 @@
       updateViz();
     }
 
-    const apiPathologiesUrl = "{{ url_for('api.pathologies') }}";
+    const apiPathologiesUrl = "{{ url_for('pathologies_api.pathologies') }}";
     let currentViz = 'table';
     let currentMapMode = 'region';
     let pathologiesData = [];
+    let currentTableData = [];
+    let tablePage = 1;
+    const tablePageSize = 15;
 
     const apiRegionsUrl = "{{ url_for('api.regions') }}";
     const apiDepartmentsBaseUrl = "{{ url_for('api.departements', region_id=0) }}";
@@ -226,6 +241,10 @@
       return row.region_libelle || row.region || '';
     }
 
+    function displayPathologyLabel(row) {
+      return row.pathologie || 'Non renseignée';
+    }
+
     function isOutreMerRegion(row) {
       const outreMerCodes = new Set(['01', '02', '03', '04', '06']);
       return row.region && outreMerCodes.has(row.region.toString().padStart(2, '0'));
@@ -244,8 +263,13 @@
       return val;
     }
 
+    function getSelectedYear() {
+      const yearValue = document.getElementById('sel-year').value;
+      return yearValue === 'all' ? null : Number(yearValue);
+    }
+
     function getFilteredData() {
-      const year = parseInt(document.getElementById('sel-year').value, 10);
+      const year = getSelectedYear();
       const path = document.getElementById('sel-pathology').value;
       return pathologiesData.filter(d => {
         const rowYear = d.annee != null ? Number(d.annee) : null;
@@ -254,89 +278,177 @@
       });
     }
 
+    function getFilteredDataForChart() {
+      const path = document.getElementById('sel-pathology').value;
+      return pathologiesData.filter(d => {
+        return (path === 'all' || d.pathologie === path);
+      });
+    }
+
     async function updateViz() {
       const ind = document.getElementById('sel-indicator').value;
-      const year = parseInt(document.getElementById('sel-year').value, 10);
+      const year = getSelectedYear();
       const path = document.getElementById('sel-pathology').value;
       const regionSelect = document.getElementById('sel-region');
-      const region = regionSelect.value !== 'all' ? regionSelect.selectedOptions[0]?.dataset.code : null;
+      const regionId = regionSelect.value;
+      const region = regionId !== 'all' ? regionSelect.selectedOptions[0]?.dataset.code : null;
       const departement = document.getElementById('sel-departement').value;
-      if (currentViz === 'map') {
+      
+      if (currentViz === 'chart') {
+        let regionToFetch = null;
+        let deptToFetch = null;
+        if (regionId !== 'all' && region) {
+          regionToFetch = region;
+          if (departement !== 'all') {
+            deptToFetch = departement;
+          }
+        }
+        pathologiesData = await fetchPathologiesData(null, path, regionToFetch, deptToFetch);
+      } else if (currentViz === 'map') {
         pathologiesData = await fetchPathologiesData(year, path, null, null);
       } else {
         pathologiesData = await fetchPathologiesData(year, path, region, departement);
       }
-      const data = getFilteredData();
+      
+      const data = currentViz === 'chart' ? getFilteredDataForChart() : getFilteredData();
       document.getElementById('viz-table').style.display = 'none';
       document.getElementById('viz-chart').style.display = 'none';
       document.getElementById('viz-map').style.display = 'none';
       if (currentViz === 'table') renderTable(data, ind);
-      if (currentViz === 'chart') renderChart(data, ind);
+      if (currentViz === 'chart') renderChart(data, ind, regionId === 'all', departement === 'all');
       if (currentViz === 'map') renderMap(data, ind);
     }
 
     function renderTable(data, ind) {
       document.getElementById('viz-table').style.display = 'block';
       document.getElementById('th-indicator').textContent = getIndicatorLabel(ind);
-      document.getElementById('table-body').innerHTML = data.map(row => `
+      currentTableData = data;
+      tablePage = 1;
+      renderCurrentTablePage(ind);
+    }
+
+    function renderCurrentTablePage(ind) {
+      const totalRows = currentTableData.length;
+      const totalPages = Math.max(1, Math.ceil(totalRows / tablePageSize));
+      if (tablePage > totalPages) tablePage = totalPages;
+
+      const start = (tablePage - 1) * tablePageSize;
+      const end = start + tablePageSize;
+      const pageData = currentTableData.slice(start, end);
+
+      document.getElementById('table-body').innerHTML = pageData.map(row => `
         <tr>
-          <td>${displayRegionLabel(row)}</td><td>${row.pathologie}</td>
+          <td>${displayRegionLabel(row)}</td><td>${displayPathologyLabel(row)}</td>
           <td>${displayDepartementLabel(row)}</td><td>${row.annee}</td>
           <td style="text-align:right;">${formatValue(row[ind], ind)}</td>
         </tr>
       `).join('');
+
+      const pagination = document.getElementById('patho-table-pagination');
+      const pageInfo = document.getElementById('patho-page-info');
+      const prevBtn = document.getElementById('patho-prev-page');
+      const nextBtn = document.getElementById('patho-next-page');
+
+      if (totalRows <= tablePageSize) {
+        pagination.style.display = 'none';
+      } else {
+        pagination.style.display = 'flex';
+        pageInfo.textContent = `Page ${tablePage} / ${totalPages} (${totalRows} lignes)`;
+      }
+
+      prevBtn.disabled = tablePage <= 1;
+      nextBtn.disabled = tablePage >= totalPages;
     }
 
-    function renderChart(data, ind) {
+    function renderChart(data, ind, groupByRegion, groupByDept) {
       document.getElementById('viz-chart').style.display = 'block';
+      const emptyState = document.getElementById('chart-empty');
       const canvas = document.getElementById('chart-canvas');
-      const ctx = canvas.getContext('2d');
-      const regionMap = {};
-      const pathoSet = new Set();
-      data.forEach(d => {
-        if (!regionMap[d.region]) regionMap[d.region] = {};
-        regionMap[d.region][d.pathologie] = d[ind];
-        pathoSet.add(d.pathologie);
-      });
-      const regions = Object.keys(regionMap);
-      const pathos = Array.from(pathoSet);
-      const colors = ['#3b82f6', '#ef4444', '#10b981', '#f59e0b', '#8b5cf6'];
-      const barW = 40, groupGap = 20, leftPad = 100, topPad = 30, bottomPad = 130, rightPad = 20;
-      const groupW = Math.max(pathos.length, 1) * barW + groupGap;
-      const totalW = Math.max(800, leftPad + regions.length * groupW + rightPad);
-      const totalH = 500;
-      canvas.width = totalW; canvas.height = totalH;
-      ctx.clearRect(0, 0, totalW, totalH);
-      let maxVal = 0;
-      data.forEach(d => { if (d[ind] > maxVal) maxVal = d[ind]; });
-      const chartH = totalH - topPad - bottomPad;
-      ctx.strokeStyle = '#e5e7eb'; ctx.fillStyle = '#6b7280'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
-      for (let i = 0; i <= 5; i++) {
-        const y = topPad + chartH - (i / 5) * chartH;
-        ctx.beginPath(); ctx.moveTo(leftPad, y); ctx.lineTo(totalW - rightPad, y); ctx.stroke();
-        ctx.fillText(formatValue((i / 5) * maxVal, ind), leftPad - 6, y + 4);
+
+      if (!data.length) {
+        emptyState.style.display = 'block';
+        canvas.style.display = 'none';
+        return;
       }
-      regions.forEach((region, ri) => {
-        const groupX = leftPad + ri * groupW;
-        pathos.forEach((patho, pi) => {
-          const val = regionMap[region][patho] || 0;
-          const barH = maxVal > 0 ? (val / maxVal) * chartH : 0;
-          ctx.fillStyle = colors[pi % colors.length];
-          ctx.fillRect(groupX + pi * barW + 2, topPad + chartH - barH, barW - 4, barH);
+      
+      canvas.style.display = 'block';
+      emptyState.style.display = 'none';
+
+      const ctx = canvas.getContext('2d');
+      const indicatorLabel = getIndicatorLabel(ind);
+      const colors = ['#1E3A8A', '#16A34A', '#DC2626', '#F59E0B', '#7C3AED', '#0891B2', '#BE123C', '#65A30D', '#0F766E', '#4F46E5', '#059669', '#E11D48', '#EAB308'];
+
+      let allYears = new Set();
+      let groupedData = {};
+      let groupLabel = '';
+
+      if (groupByRegion) {
+        groupLabel = 'Région';
+        data.forEach(row => {
+          const year = row.annee || new Date().getFullYear();
+          allYears.add(year);
+          const regionName = displayRegionLabel(row) || 'Inconnue';
+          if (!groupedData[regionName]) groupedData[regionName] = {};
+          groupedData[regionName][year] = (groupedData[regionName][year] || 0) + Number(row[ind] || 0);
         });
-        ctx.save();
-        ctx.translate(groupX + (Math.min(pathos.length, 1) * barW) / 2, topPad + chartH + 10);
-        ctx.rotate(-Math.PI / 4);
-        ctx.fillStyle = '#374151'; ctx.font = '11px sans-serif'; ctx.textAlign = 'right';
-        ctx.fillText(region, 0, 0);
-        ctx.restore();
-      });
-      const legendY = totalH - 20;
-      pathos.forEach((patho, i) => {
-        const x = leftPad + i * 200;
-        ctx.fillStyle = colors[i % colors.length]; ctx.fillRect(x, legendY - 12, 14, 14);
-        ctx.fillStyle = '#374151'; ctx.font = '12px sans-serif'; ctx.textAlign = 'left';
-        ctx.fillText(patho, x + 18, legendY);
+      } else if (groupByDept) {
+        groupLabel = 'Département';
+        data.forEach(row => {
+          const year = row.annee || new Date().getFullYear();
+          allYears.add(year);
+          const deptName = displayDepartementLabel(row) || displayRegionLabel(row) || 'Inconnu';
+          if (!groupedData[deptName]) groupedData[deptName] = {};
+          groupedData[deptName][year] = (groupedData[deptName][year] || 0) + Number(row[ind] || 0);
+        });
+      } else {
+        data.forEach(row => {
+          const year = row.annee || new Date().getFullYear();
+          allYears.add(year);
+          if (!groupedData['global']) groupedData['global'] = {};
+          groupedData['global'][year] = (groupedData['global'][year] || 0) + Number(row[ind] || 0);
+        });
+      }
+
+      const years = Array.from(allYears).sort((a, b) => Number(a) - Number(b));
+      const groups = Object.keys(groupedData).sort((a, b) => a.localeCompare(b, 'fr'));
+      const datasets = groups.map((group, idx) => ({
+        label: group === 'global' ? indicatorLabel : `${groupLabel}: ${group}`,
+        data: years.map(year => groupedData[group][year] || 0),
+        borderColor: colors[idx % colors.length],
+        backgroundColor: colors[idx % colors.length] + '14',
+        borderWidth: 2.5,
+        tension: 0.15,
+        fill: false,
+        pointRadius: 4,
+        pointHoverRadius: 6,
+      }));
+
+      if (window.pathologiesChart) {
+        window.pathologiesChart.destroy();
+      }
+
+      window.pathologiesChart = new Chart(ctx, {
+        type: 'line',
+        data: {
+          labels: years,
+          datasets: datasets,
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'top' },
+            tooltip: {
+              callbacks: {
+                label: (context) => `${context.dataset.label} : ${formatValue(context.raw, ind)}`,
+              },
+            },
+          },
+          scales: {
+            x: { title: { display: true, text: 'Années disponibles' } },
+            y: { beginAtZero: true, title: { display: true, text: indicatorLabel } },
+          },
+        },
       });
     }
 
@@ -434,7 +546,7 @@
     }
 
     async function initializePathologies() {
-      const year = parseInt(document.getElementById('sel-year').value, 10);
+      const year = getSelectedYear();
       const labels = await fetchPathologyLabels(year);
       populatePathologySelect(labels);
       const regions = await fetchRegions();
@@ -451,6 +563,19 @@
     document.getElementById('sel-region').addEventListener('change', onRegionChange);
     document.getElementById('sel-departement').addEventListener('change', updateViz);
     document.getElementById('sel-indicator').addEventListener('change', updateViz);
+
+    document.getElementById('patho-prev-page').addEventListener('click', () => {
+      if (tablePage <= 1) return;
+      tablePage -= 1;
+      renderCurrentTablePage(document.getElementById('sel-indicator').value);
+    });
+
+    document.getElementById('patho-next-page').addEventListener('click', () => {
+      const totalPages = Math.max(1, Math.ceil(currentTableData.length / tablePageSize));
+      if (tablePage >= totalPages) return;
+      tablePage += 1;
+      renderCurrentTablePage(document.getElementById('sel-indicator').value);
+    });
 
     initializePathologies();
   </script>
