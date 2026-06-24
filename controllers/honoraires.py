@@ -21,6 +21,16 @@ TYPES_COMPARAISON = [
 # Visualisations valides — sert à filtrer un viz_type douteux venu de l'URL
 VIZ_VALIDES = {"tableau", "courbe"}
 
+# Professions à exclure du select (données incomplètes dans le dataset honoraires)
+PROFESSIONS_EXCLUES_HONORAIRES = {
+    "Autres médecins",
+    "Ensemble des auxiliaires médicaux",
+    "Ensemble des chirurgiens-dentistes",
+    "Ensemble des médecins",
+    "Ensemble des médecins généralistes",
+    "Ensemble des médecins spécialistes (hors généralistes)",
+}
+
 
 # ── Mise en forme des données pour les graphiques ───────────────────────────
 # On prépare ici (contrôleur) la structure exacte attendue par Chart.js, pour
@@ -86,7 +96,10 @@ def afficher():
     try:
         # ── Listes pour les <select> (depuis MySQL) ──────────────────────
         regions     = session.query(Region).order_by(Region.libelle).all()
-        professions = session.query(ProfessionSante).order_by(ProfessionSante.libelle).all()
+        professions = [
+            p for p in session.query(ProfessionSante).order_by(ProfessionSante.libelle).all()
+            if p.libelle not in PROFESSIONS_EXCLUES_HONORAIRES
+        ]
 
         departements = []
         if region_id:
