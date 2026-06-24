@@ -3,10 +3,19 @@
 {% block titre %}Accueil{% endblock %}
 
 {% block contenu %}
-<h1 style="font-size:2.5rem; margin-bottom:16px;">Bienvenue sur AMELI Data</h1>
-<p style="font-size:1.125rem; color:#4b5563; margin-bottom:32px;">
-  Explorez les données de santé publique de l'Assurance Maladie à travers des visualisations interactives.
-</p>
+<section class="home-intro" aria-labelledby="presentation-ameli">
+  <h2 id="presentation-ameli" class="home-intro-kicker">Présentation d'AMELI</h2>
+  <p>
+    AMELI est le portail de l'Assurance Maladie en France. Il donne accès à des
+    informations sur les professionnels de santé, les prescriptions, les honoraires
+    et les pathologies suivies sur le territoire.
+  </p>
+  <p>
+    Cette application rassemble ces données pour les rendre plus lisibles et plus
+    faciles à explorer, avec des filtres par région, département et profession.
+  </p>
+</section>
+
 <div class="cards-grid">
   <a class="card" href="{{ url_for('dashboard.pathologies') }}">
     <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>

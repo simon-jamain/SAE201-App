@@ -78,6 +78,43 @@ nav, .primary-nav {
 main { max-width: 1200px; margin: 0 auto; padding: 32px 16px; }
 footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; font-size: 0.875rem; text-align: center; }
 
+.home-intro {
+  margin-top: 24px;
+  padding: 24px 28px;
+  border-radius: 8px;
+  background: white;
+  border: none;
+  box-shadow: 0 1px 6px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.home-intro-kicker {
+  margin-bottom: 8px;
+  color: #1e40af;
+  font-size: 0.875rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+}
+
+.home-intro h2 {
+  font-size: 1.6rem;
+  margin-bottom: 12px;
+  color: #0f172a;
+}
+
+.home-intro p {
+  color: #475569;
+  line-height: 1.65;
+  max-width: 75ch;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.home-intro p + p {
+  margin-top: 10px;
+}
+
 .btn {
   display: inline-flex;
   align-items: center;
