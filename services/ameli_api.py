@@ -78,7 +78,7 @@ class AmeliAPI:
         if departement_code:
             territoire = f'departement="{departement_code}"'
         else:
-            territoire = f'code_region="{region_code}"'
+            territoire = f'region="{region_code}"'
         where = (
             f'profession_sante="{profession}" AND '
             f'{territoire} AND '
@@ -97,7 +97,7 @@ class AmeliAPI:
         if departement_code:
             territoire = f'departement="{departement_code}"'
         else:
-            territoire = f'code_region="{region_code}"'
+            territoire = f'region="{region_code}"'
         where = (
             f'profession_sante="{profession}" AND '
             f'{territoire} AND '
@@ -116,7 +116,7 @@ class AmeliAPI:
         if departement_code:
             territoire = f'departement="{departement_code}"'
         else:
-            territoire = f'code_region="{region_code}"'
+            territoire = f'region="{region_code}"'
         where = (
             f'profession_sante="{profession}" AND '
             f'{territoire} AND '
@@ -137,7 +137,7 @@ class AmeliAPI:
         if departement_code:
             territoire = f'code_departement="{departement_code}"'
         else:
-            territoire = f'code_region="{region_code}"'
+            territoire = f'region="{region_code}"'
         where = (
             f'profession_sante="{profession}" AND '
             f'{territoire} AND '
@@ -153,7 +153,7 @@ class AmeliAPI:
         if departement_code:
             territoire = f'code_departement="{departement_code}"'
         else:
-            territoire = f'code_region="{region_code}"'
+            territoire = f'region="{region_code}"'
         where = (
             f'profession_sante="{profession}" AND '
             f'{territoire}'
@@ -176,7 +176,7 @@ class AmeliAPI:
         if departement_code:
             territoire = f'code_departement="{departement_code}"'
         else:
-            territoire = f'code_region="{region_code}"'
+            territoire = f'region="{region_code}"'
         where = (
             f'profession_sante="{profession}" AND '
             f'{territoire} AND '

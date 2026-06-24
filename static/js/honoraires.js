@@ -104,32 +104,49 @@
 
     const tbody = document.getElementById("tbody-classement");
     const nav   = document.getElementById("pagination-classement");
+    if (nav) {
+      nav.style.display = 'flex';
+      nav.style.justifyContent = 'space-between';
+      nav.style.alignItems = 'center';
+      nav.style.gap = '8px';
+      nav.style.marginTop = '12px';
+      nav.style.flexWrap = 'wrap';
+    }
     if (!tbody || !nav) return;
 
-    const perPage    = 10;
-    const totalPages = Math.ceil(rows.length / perPage);
+    const perPage = 15;
+    const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
+    let currentPage = 1;
 
     function renderPage(p) {
-      const start = (p - 1) * perPage;
+      currentPage = Math.min(Math.max(1, p), totalPages);
+      const start = (currentPage - 1) * perPage;
       const slice = rows.slice(start, start + perPage);
 
       tbody.innerHTML = slice.map((r, i) => `
         <tr>
           <td>${start + i + 1}</td>
           <td>${r.libelle_departement || r.departement}</td>
-          <td class="num">${r.montant_honoraires_moyens}</td>
+          <td class="num">${Number(r.montant_honoraires_moyens).toLocaleString('fr-FR')}</td>
         </tr>
       `).join("");
 
-      nav.innerHTML = "";
-      for (let i = 1; i <= totalPages; i++) {
-        const btn = document.createElement("button");
-        btn.type = "button";
-        btn.textContent = i;
-        btn.className = "viz-btn" + (i === p ? " active" : "");
-        btn.onclick = () => renderPage(i);
-        nav.appendChild(btn);
-      }
+      // Pagination UI: info + prev/next
+      nav.innerHTML = `
+        <span id="classement-page-info" style="font-size:0.9rem;color:#64748b;">Page ${currentPage} / ${totalPages} (${rows.length} lignes)</span>
+        <div style="display:flex;gap:8px;">
+          <button type="button" id="classement-prev" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Précédent</button>
+          <button type="button" id="classement-next" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Suivant</button>
+        </div>
+      `;
+
+      const prev = document.getElementById('classement-prev');
+      const next = document.getElementById('classement-next');
+      if (prev) prev.disabled = currentPage <= 1;
+      if (next) next.disabled = currentPage >= totalPages;
+
+      if (prev) prev.addEventListener('click', () => { if (currentPage > 1) renderPage(currentPage - 1); });
+      if (next) next.addEventListener('click', () => { if (currentPage < totalPages) renderPage(currentPage + 1); });
     }
 
     renderPage(1);

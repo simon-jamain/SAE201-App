@@ -13,7 +13,7 @@
     <div class="viz-section">
       <label>Choisissez le type de visualisation</label>
       <div class="viz-switcher">
-        <button type="button" class="viz-btn active" onclick="switchViz('pp', 'tab', this)">Tableau ({{ annee }})</button>
+        <button type="button" class="viz-btn active" onclick="switchViz('pp', 'tab', this)">Tableau ({{ annee if annee else 'Toutes les années' }})</button>
         <button type="button" class="viz-btn" onclick="switchViz('pp', 'graph', this)">Graphique Évolution Historique</button>
       </div>
     </div>
@@ -54,18 +54,19 @@
 
         <div class="filter-group">
           <label>Département</label>
-          <select name="departement_id" id="pp-dept" required>
+          <select name="departement_id" id="pp-dept">
             {% if dept %}
             <option value="{{ dept.id }}" selected>{{ dept.code }} – {{ dept.libelle }}</option>
             {% else %}
-            <option value="">— Choisir Région d'abord —</option>
+            <option value="">— Tous les départements —</option>
             {% endif %}
           </select>
         </div>
 
         <div class="filter-group">
           <label>Année (Tableau)</label>
-          <select name="annee" required>
+          <select name="annee">
+            <option value="" {% if not annee %}selected{% endif %}>Toutes les années</option>
             {% for a in range(2023, 2018, -1) %}
             <option value="{{ a }}" {% if annee == a %}selected{% endif %}>{{ a }}</option>
             {% endfor %}
@@ -88,10 +89,12 @@
     <div class="mc-label">Profession</div>
     <div class="mc-val" style="font-size:15px; font-weight:600;">{{ prof.libelle }}</div>
   </div>
+{% if dept %}
   <div class="metric-card">
     <div class="mc-label">Département</div>
     <div class="mc-val" style="font-size:15px; font-weight:600;">{{ dept.code }} – {{ dept.libelle }}</div>
   </div>
+  {% endif %}
   {% if poste %}
   <div class="metric-card">
     <div class="mc-label">Poste de Prescription</div>
@@ -99,11 +102,11 @@
   </div>
   {% endif %}
   <div class="metric-card">
-    <div class="mc-label">Volume Moyen Prescription ({{ annee }})</div>
+    <div class="mc-label">Volume Moyen Prescription ({{ annee if annee else 'Toutes les années' }})</div>
     <div class="mc-val">{{ "{:,.0f}".format(total_boites).replace(',', ' ') }}</div>
   </div>
   <div class="metric-card">
-    <div class="mc-label">Montant Total Remboursé ({{ annee }})</div>
+    <div class="mc-label">Montant Total Remboursé ({{ annee if annee else 'Toutes les années' }})</div>
     <div class="mc-val">{{ "{:,.0f}".format(total_montant).replace(',', ' ') }} €</div>
   </div>
 </div>
@@ -119,17 +122,15 @@
           <th>Montant Total</th>
         </tr>
       </thead>
-      <tbody>
-        {% for r in resultats %}
-        <tr>
-          <td>{{ r.annee }}</td>
-          <td style="font-weight:500;">{{ r.poste }}</td>
-          <td>{{ "{:,.0f}".format(r.nb_prescriptions).replace(',', ' ') }}</td>
-          <td style="font-weight:600; color:var(--navy);">{{ "{:,.2f}".format(r.montant_total).replace(',', ' ') }} €</td>
-        </tr>
-        {% endfor %}
-      </tbody>
+      <tbody id="presc-tbody"></tbody>
     </table>
+    <div class="table-pagination" id="presc-pagination" style="display:none;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
+      <span id="presc-page-info" style="font-size:0.9rem;color:#64748b;"></span>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="presc-prev" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Précédent</button>
+        <button type="button" id="presc-next" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Suivant</button>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -231,5 +232,10 @@
     btn.classList.add("active");
   }
 </script>
+
+<script>
+  const RESULTATS = {{ (resultats if resultats is defined else []) | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/prescription.js') }}"></script>
 
 {% endblock %}
