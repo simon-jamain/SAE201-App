@@ -33,22 +33,29 @@ def medicaments():
         profession_id  = request.args.get("profession_id",  type=int)
         departement_id = request.args.get("departement_id", type=int)
         region_id      = request.args.get("region_id",      type=int)
-        annee          = request.args.get("annee",           type=int, default=2023)
+        annee          = request.args.get("annee",           type=int)
         poste_id       = request.args.get("poste_id",       type=int)
 
-        # Formulaire non soumis
-        if not all([profession_id, departement_id]):
+        if not profession_id:
             return render_template("prescription.html",
                                    regions=regions, professions=professions, postes=postes)
 
         prof  = session.get(ProfessionSante, profession_id)
-        dept  = session.get(Departement, departement_id)
+        dept  = session.get(Departement, departement_id) if departement_id else None
         poste = session.get(PostePrescription, poste_id) if poste_id else None
 
-        code_dept = str(dept.code).strip()
+        # Construction du where selon les filtres disponibles
+        where_courbe  = f"profession_sante=\"{prof.libelle}\""
+        # Si l'utilisateur n'a pas choisi d'année, on récupère toutes les années
+        if annee:
+            where_tableau = f"annee=date'{annee}' AND profession_sante=\"{prof.libelle}\""
+        else:
+            where_tableau = f"profession_sante=\"{prof.libelle}\""
 
-        where_tableau = f"annee=date'{annee}' AND departement=\"{code_dept}\" AND profession_sante=\"{prof.libelle}\""
-        where_courbe  = f"departement=\"{code_dept}\" AND profession_sante=\"{prof.libelle}\""
+        if dept:
+            code_dept = str(dept.code).strip()
+            where_tableau += f' AND departement="{code_dept}"'
+            where_courbe  += f' AND departement="{code_dept}"'
 
         if poste:
             where_tableau += f' AND poste_prescription="{poste.id}"'
@@ -141,6 +148,12 @@ def professionnels():
         evolution = api.get_evolution_effectifs(prof.libelle, dept_code, region_code)
         par_sexe  = api.get_effectifs_par_sexe(prof.libelle, dept_code, annee, region_code)
         par_age   = api.get_effectifs_par_age(prof.libelle, dept_code, annee, region_code)
+
+        print(f"DEBUG dept_code: {dept_code}")
+        print(f"DEBUG region_code: {region_code}")
+        print(f"DEBUG evolution: {evolution}")
+        print(f"DEBUG par_sexe: {par_sexe}")
+        print(f"DEBUG par_age: {par_age}")
 
         if evolution is None:
             return render_template("erreur.html", type="api",

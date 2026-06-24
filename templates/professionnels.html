@@ -13,8 +13,8 @@
     <div class="viz-section">
       <label>Choisissez le type de visualisation</label>
       <div class="viz-switcher">
-        <button type="button" class="viz-btn active" onclick="switchViz('tab',this)">Tableau</button>
-        <button type="button" class="viz-btn" onclick="switchViz('graph',this)">Graphiques</button>
+        <button type="button" class="viz-btn active" onclick="switchViz('view','tab',this)">Tableau</button>
+        <button type="button" class="viz-btn" onclick="switchViz('view','graph',this)">Graphiques</button>
       </div>
     </div>
   </div>
@@ -32,7 +32,7 @@
         </div>
         <div class="filter-group">
           <label>Région</label>
-          <select name="region_id" id="rp-region">
+          <select name="region_id" id="pf-region">
             <option value="">— Choisir —</option>
             {% for r in regions %}
             <option value="{{ r.id }}" {% if reg and reg.id==r.id %}selected{% endif %}>{{ r.libelle }}</option>
@@ -41,7 +41,7 @@
         </div>
         <div class="filter-group">
           <label>Département</label>
-          <select name="departement_id" id="rp-dept">
+          <select name="departement_id" id="pf-dept">
             <option value="">— Tous les départements —</option>
           </select>
         </div>
@@ -76,12 +76,15 @@
   <div class="table-wrapper">
     <table>
       <thead><tr><th>Année</th><th>Effectif</th><th>Densité (/ 100 000 hab.)</th></tr></thead>
-      <tbody>
-        {% for r in resultats %}
-        <tr><td>{{ r.annee }}</td><td>{{ r.effectif }}</td><td>{{ r.densite }}</td></tr>
-        {% endfor %}
-      </tbody>
+      <tbody id="profes-tbody"></tbody>
     </table>
+    <div class="table-pagination" id="profes-pagination" style="display:none;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
+      <span id="profes-page-info" style="font-size:0.9rem;color:#64748b;"></span>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="profes-prev" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Précédent</button>
+        <button type="button" id="profes-next" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Suivant</button>
+      </div>
+    </div>
   </div>
   {% else %}
   <div class="empty"><strong>Aucune donnée</strong>Aucun résultat pour cette sélection.</div>
@@ -234,25 +237,16 @@ function switchTab(e, tabId) {
   e.currentTarget.classList.add('active');
   document.getElementById(tabId).classList.add('active');
 }
-document.getElementById("rp-region").addEventListener("change", async (e) => {
-  const id = e.target.value;
-  const d = document.getElementById("rp-dept");
-  d.innerHTML = '<option value="">— Tous les départements —</option>';
-  if (!id) return;
-  try {
-    const res = await fetch(`${BASE_URL}/api/departements/${id}`);
-    (await res.json()).forEach(dept => {
-      const o = document.createElement("option");
-      o.value = dept.id; o.textContent = `${dept.code} – ${dept.libelle}`;
-      d.appendChild(o);
-    });
-  } catch { d.innerHTML = '<option value="">Erreur</option>'; }
-});
-function switchViz(type, btn) {
-  document.querySelectorAll(".viz-view").forEach(v => v.classList.remove("active"));
-  document.getElementById("view-" + type).classList.add("active");
-  btn.closest(".viz-switcher").querySelectorAll(".viz-btn").forEach(b => b.classList.remove("active"));
-  btn.classList.add("active");
+function switchViz(prefix, type, btn) {
+  document.querySelectorAll(`#${prefix}-tab, #${prefix}-graph`).forEach(v => v.classList.remove('active'));
+  document.getElementById(`${prefix}-${type}`).classList.add('active');
+  btn.closest('.viz-switcher').querySelectorAll('.viz-btn').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
 }
 </script>
+
+<script>
+  const RESULTATS = {{ (resultats if resultats is defined else []) | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/professionnels.js') }}"></script>
 {% endblock %}
