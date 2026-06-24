@@ -1,0 +1,43 @@
+/* auth.css — zone de connexion (header) + pages connexion / création de compte */
+
+/* ── Zone connexion dans le header ── */
+.header-auth        { margin-left: auto; display: flex; align-items: center; gap: 14px; }
+.header-user        { font-size: .875rem; opacity: .9; }
+.header-auth .header-link { color: #fff; text-decoration: none; font-size: .875rem; opacity: .9; }
+.header-auth .header-link:hover { opacity: 1; text-decoration: underline; }
+
+.btn-connexion {
+  background: #fff; color: #1e3a8a; padding: 8px 18px; border-radius: 8px;
+  font-size: .875rem; font-weight: 600; text-decoration: none;
+  transition: background .15s;
+}
+.btn-connexion:hover { background: #e0e7ff; }
+
+/* ── Bouton primaire (formulaires) ── */
+.btn-primary {
+  width: 100%; padding: 12px; margin-top: 8px;
+  background: #1e3a8a; color: #fff; border: none; border-radius: 8px;
+  font-size: .95rem; font-weight: 600; cursor: pointer;
+  transition: background .15s;
+}
+.btn-primary:hover { background: #1e40af; }
+
+/* ── Pages connexion / création de compte ── */
+.auth-box { max-width: 420px; }
+
+.auth-form { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.auth-field { display: flex; flex-direction: column; gap: 6px; }
+.auth-field label { font-weight: 600; font-size: .875rem; }
+.auth-field input {
+  padding: 10px 12px; border: 1px solid #d1d5db; border-radius: 6px; font-size: .95rem;
+}
+.auth-field input:focus { outline: 2px solid #93c5fd; outline-offset: 1px; border-color: #1e3a8a; }
+
+.auth-error {
+  background: #fef2f2; color: #b91c1c; border: 1px solid #fecaca;
+  padding: 10px 14px; border-radius: 6px; font-size: .875rem; margin-top: 12px;
+}
+
+.auth-switch { margin-top: 20px; font-size: .875rem; color: #6b7280; text-align: center; }
+.auth-switch a { color: #1e40af; font-weight: 600; text-decoration: none; }
+.auth-switch a:hover { text-decoration: underline; }

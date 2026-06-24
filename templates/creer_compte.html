@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+
+{% block titre %}Créer un compte{% endblock %}
+
+{% block contenu %}
+<div class="content-box auth-box">
+  <h1>Créer un compte</h1>
+
+  {% if erreur %}
+    <p class="auth-error">{{ erreur }}</p>
+  {% endif %}
+
+  <form method="post" action="{{ url_for('auth.creer_compte') }}" class="auth-form">
+    <div class="auth-field">
+      <label for="identifiant">Nom d'utilisateur</label>
+      <input type="text" id="identifiant" name="identifiant" required autofocus>
+    </div>
+    <div class="auth-field">
+      <label for="mot_de_passe">Mot de passe</label>
+      <input type="password" id="mot_de_passe" name="mot_de_passe" required>
+    </div>
+    <div class="auth-field">
+      <label for="confirmation">Confirmer le mot de passe</label>
+      <input type="password" id="confirmation" name="confirmation" required>
+    </div>
+    <button type="submit" class="btn-primary">Créer le compte</button>
+  </form>
+
+  <p class="auth-switch">
+    Déjà un compte ?
+    <a href="{{ url_for('auth.connexion') }}">Se connecter</a>
+  </p>
+</div>
+{% endblock %}

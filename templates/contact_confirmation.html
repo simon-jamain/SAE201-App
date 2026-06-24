@@ -1,0 +1,38 @@
+{% extends "base.html" %}
+{% block titre %}Message envoyé · AMELI Data{% endblock %}
+{% block contenu %}
+
+<div class="contact-confirm-wrap">
+
+  <div class="contact-confirm-icon">
+    <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#1E3A8A" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="20 6 9 17 4 12"/>
+    </svg>
+  </div>
+
+  <h1 class="contact-confirm-title">Message envoyé !</h1>
+  <p class="contact-confirm-subtitle">
+    Merci <strong>{{ nom }}</strong>, votre message a bien été reçu.
+  </p>
+  <p class="contact-confirm-subtitle contact-confirm-subtitle-bottom">
+    Nous vous répondrons à <strong>{{ email }}</strong> sous 48 h ouvrées.
+  </p>
+
+  <div class="contact-confirm-summary">
+    <div class="contact-confirm-summary-title">Récapitulatif</div>
+    <table class="contact-confirm-table">
+      <tr><td class="contact-confirm-key">Nom</td><td class="contact-confirm-value">{{ nom }}</td></tr>
+      <tr><td class="contact-confirm-key">E-mail</td><td class="contact-confirm-value">{{ email }}</td></tr>
+      <tr><td class="contact-confirm-key">Sujet</td><td class="contact-confirm-value">{{ sujet_libelle }}</td></tr>
+      <tr class="contact-confirm-row-top"><td class="contact-confirm-key">Message</td><td class="contact-confirm-value contact-confirm-message">{{ message }}</td></tr>
+    </table>
+  </div>
+
+  <div class="contact-confirm-actions">
+    <a href="{{ url_for('accueil.index') }}" class="btn btn-primary">← Retour à l'accueil</a>
+    <a href="{{ url_for('contact.index') }}" class="btn btn-ghost">Envoyer un autre message</a>
+  </div>
+
+</div>
+
+{% endblock %}

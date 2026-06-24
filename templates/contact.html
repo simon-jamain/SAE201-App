@@ -1,0 +1,66 @@
+{% extends "base.html" %}
+{% block titre %}Contact · AMELI Data{% endblock %}
+{% block contenu %}
+
+<h1 class="page-heading">Contact</h1>
+
+<div class="contact-grid">
+  <div class="form-card">
+    <h3>Envoyer un message</h3>
+
+    {% if erreur %}
+    <div class="alert alert-error">{{ erreur }}</div>
+    {% endif %}
+
+    <form action="{{ url_for('contact.envoyer') }}" method="post" novalidate>
+      <div class="field">
+        <label for="nom">Nom</label>
+        <input type="text" id="nom" name="nom" placeholder="Votre nom" required>
+      </div>
+      <div class="field">
+        <label for="email">Adresse e-mail</label>
+        <input type="email" id="email" name="email" placeholder="prenom.nom@exemple.fr" required>
+      </div>
+      <div class="field">
+        <label for="sujet">Sujet</label>
+        <select id="sujet" name="sujet" required>
+          <option value="">— Choisir —</option>
+          <option value="bug">Signaler un bug</option>
+          <option value="donnees">Question sur les données</option>
+          <option value="suggestion">Suggestion d'amélioration</option>
+          <option value="autre">Autre</option>
+        </select>
+      </div>
+      <div class="field">
+        <label for="message">Message</label>
+        <textarea id="message" name="message" rows="5" placeholder="Décrivez votre demande…" required></textarea>
+      </div>
+      <button type="submit" class="btn btn-primary contact-submit">Envoyer le message</button>
+    </form>
+  </div>
+
+  <div class="info-cards">
+    <div class="info-card">
+      <span class="ic-icon">🏛️</span>
+      <div>
+        <strong>IUT de Créteil-Vitry</strong>
+        <p>Département Informatique<br>BUT Informatique – SAE 2.01</p>
+      </div>
+    </div>
+    <div class="info-card">
+      <span class="ic-icon">📊</span>
+      <div>
+        <strong>Source des données</strong>
+        <p>API publique <a href="https://data.ameli.fr" target="_blank" rel="noopener">data.ameli.fr</a><br>Démographie des professionnels de santé libéraux.</p>
+      </div>
+    </div>
+    <div class="info-card">
+      <span class="ic-icon">⚡</span>
+      <div>
+        <strong>Temps de réponse</strong>
+        <p>Réponse sous 48 h ouvrées.</p>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
