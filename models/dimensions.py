@@ -32,7 +32,6 @@ class ProfessionSante(Base):
     libelle = Column(String(200))
 
 class PostePrescription(Base):
-    __tablename__ = "type_prescription"  # Vérifie que c'est bien le nom dans ta base de données
-
+    __tablename__ = "type_prescription"
     id      = Column(Integer, primary_key=True)
     libelle = Column(String(200))

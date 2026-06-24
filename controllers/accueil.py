@@ -17,16 +17,6 @@ def index():
     finally:
         session.close()
 
-
-# Pages conservées côté "accueil" : elles n'ont pas d'équivalent dans le
-# blueprint "dashboard". (Pathologies et Professionnels sont gérés par dashboard.)
-
-@bp_accueil.route("/acces-soins")
-@bp_accueil.route("/acces-soins.html")
-def acces_soins():
-    return render_template("acces-soins.html")
-
-
 @bp_accueil.route("/presentation")
 @bp_accueil.route("/presentation.html")
 def presentation():

@@ -4,9 +4,9 @@ Application web Flask qui interroge la base SAE2.04 et l'API data.ameli.fr pour 
 
 ## Équipe
 
-<!-- Remplacer par les membres de l'équipe -->
-- Prénom Nom
-- Prénom Nom
+LIN ROMARIC
+MONAR NATHAN
+SIMON JAMAIN
 
 ## Prérequis
 
@@ -17,7 +17,7 @@ Application web Flask qui interroge la base SAE2.04 et l'API data.ameli.fr pour 
 
 ```bash
 # 1. Cloner / décompresser le projet
-cd SAE201_ROMA
+cd SAE201-App
 
 # 2. Installer les dépendances
 pip install -r requirements.txt
@@ -44,14 +44,6 @@ Ouvrir ensuite http://localhost:5000 dans un navigateur.
 - [x] Graphique d'évolution (Chart.js)
 - [x] Gestion d'erreur 404 et message explicite si l'API ne répond pas
 - [x] Page de contact
-
-### Avancées
-<!-- Cocher ce qui a été réalisé -->
-- [ ] Page Honoraires
-- [ ] Page Prescriptions
-- [ ] Comparaison entre deux départements
-- [ ] Mise en cache des appels API
-- [ ] Export CSV
 
 ## Structure du projet
 

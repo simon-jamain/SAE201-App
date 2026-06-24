@@ -164,32 +164,6 @@ class AmeliAPI:
              "where": where, "order_by": "annee", "limit": 200},
         )
 
-    # ── Secteurs conventionnels ────────────────────────────────────────────
-    # Champ territoire : "code_departement"
-
-    def get_secteurs(self, profession, departement_code, annee, region_code=None,
-                     secteur_libelle=None):
-        """
-        Récupère les secteurs conventionnels.
-        secteur_libelle : filtre optionnel, ex. "Secteur 1", "Secteur 2", "Non conventionné"
-        """
-        if departement_code:
-            territoire = f'code_departement="{departement_code}"'
-        else:
-            territoire = f'region="{region_code}"'
-        where = (
-            f'profession_sante="{profession}" AND '
-            f'{territoire} AND '
-            f"year(annee)={annee}"
-        )
-        if secteur_libelle:
-            where += f' AND libelle_secteur_conventionnel="{secteur_libelle}"'
-        return self._requete(
-            "demographie-secteurs-conventionnels",
-            {"select": "annee,libelle_secteur_conventionnel,effectif",
-             "where": where, "limit": 20},
-        )
-
     # ── Pathologies ────────────────────────────────────────────────────────
 
     def get_pathology_labels(self, annee=None):
