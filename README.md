@@ -44,7 +44,7 @@ Ouvrir ensuite http://localhost:5000 dans un navigateur.
 - [x] Graphique d'évolution (Chart.js)
 - [x] Gestion d'erreur 404 et message explicite si l'API ne répond pas
 - [x] Page de contact
-
+²
 ## Structure du projet
 
 ```
