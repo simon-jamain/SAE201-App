@@ -1,0 +1,181 @@
+{% extends "base.html" %}
+{% block titre %}Professionnels de santé · AMELI Data{% endblock %}
+{% block contenu %}
+
+<h1 class="page-heading">Professionnels de santé libéraux</h1>
+
+<div class="patho-controls">
+  <div class="tabs-bar">
+    <button type="button" class="tab-btn active" onclick="switchTab(event,'tab-viz')">Type de visualisation</button>
+    <button type="button" class="tab-btn" onclick="switchTab(event,'tab-filters')">Filtres et indicateurs</button>
+  </div>
+  <div id="tab-viz" class="tab-content active">
+    <div class="viz-section">
+      <label>Choisissez le type de visualisation</label>
+      <div class="viz-switcher">
+        <button type="button" class="viz-btn active" onclick="switchViz('view','tab',this)">Tableau</button>
+        <button type="button" class="viz-btn" onclick="switchViz('view','graph',this)">Graphiques</button>
+      </div>
+    </div>
+  </div>
+  <div id="tab-filters" class="tab-content">
+    <form action="{{ url_for('dashboard.professionnels') }}" method="get">
+      <div class="filters-grid">
+        <div class="filter-group">
+          <label>Profession</label>
+          <select name="profession_id" required>
+            <option value="">— Choisir —</option>
+            {% for p in professions %}
+            <option value="{{ p.id }}" {% if prof and prof.id==p.id %}selected{% endif %}>{{ p.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Région</label>
+          <select name="region_id" id="pf-region">
+            <option value="">— Choisir —</option>
+            {% for r in regions %}
+            <option value="{{ r.id }}" {% if reg and reg.id==r.id %}selected{% endif %}>{{ r.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Département</label>
+          <select name="departement_id" id="pf-dept">
+            <option value="">— Tous les départements —</option>
+            {% for d in departements %}
+            <option value="{{ d.id }}" {% if dept and dept.id == d.id %}selected{% endif %}>{{ d.code }} – {{ d.libelle }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <label>Année</label>
+          <select name="annee" required>
+            {% for a in range(2023, 2014, -1) %}
+            <option value="{{ a }}" {% if annee==a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+          </select>
+        </div>
+        <div class="filter-group">
+          <button type="submit" class="btn btn-primary">Afficher</button>
+        </div>
+      </div>
+    </form>
+  </div>
+</div>
+
+{% if resultats is defined %}
+
+<div class="viz-container">
+  <div class="metrics-row">
+  <div class="metric-card"><div class="mc-label">Profession</div><div class="mc-val" style="font-size:14px">{{ prof.libelle }}</div></div>
+  <div class="metric-card"><div class="mc-label">Territoire</div><div class="mc-val" style="font-size:14px">{{ territoire_label }}</div></div>
+  <div class="metric-card"><div class="mc-label">Année</div><div class="mc-val">{{ annee }}</div></div>
+  <div class="metric-card"><div class="mc-label">Résultats</div><div class="mc-val">{{ resultats | length }}</div></div>
+</div>
+
+<div id="view-tab" class="viz-view active">
+  {% if resultats %}
+  <div class="table-wrapper">
+    <table>
+      <thead><tr><th>Année</th><th>Effectif</th><th>Densité (/ 100 000 hab.)</th></tr></thead>
+      <tbody id="profes-tbody"></tbody>
+    </table>
+    <div class="table-pagination" id="profes-pagination" style="display:none;justify-content:space-between;align-items:center;gap:12px;margin-top:12px;flex-wrap:wrap;">
+      <span id="profes-page-info" style="font-size:0.9rem;color:#64748b;"></span>
+      <div style="display:flex;gap:8px;">
+        <button type="button" id="profes-prev" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Précédent</button>
+        <button type="button" id="profes-next" class="btn btn-ghost" style="padding:0.45rem 0.8rem;">Suivant</button>
+      </div>
+    </div>
+  </div>
+  {% else %}
+  <div class="empty"><strong>Aucune donnée</strong>Aucun résultat pour cette sélection.</div>
+  {% endif %}
+</div>
+
+<div id="view-graph" class="viz-view">
+  <div class="charts-grid">
+
+    {# Anneau sexe — données réelles API #}
+    <div class="chart-card">
+      <p class="chart-label">Répartition par sexe</p>
+      {% if par_sexe %}
+      <div class="chart-legend" id="legend-sexe"></div>
+      <div style="position:relative;height:230px">
+        <canvas id="c-sexe" role="img" aria-label="Anneau répartition par sexe">Données par sexe.</canvas>
+      </div>
+      {% else %}
+      <div class="empty"><strong>Non disponible</strong>Données par sexe non disponibles pour cette sélection.</div>
+      {% endif %}
+    </div>
+
+    {# Camembert âge — données réelles API #}
+    <div class="chart-card">
+      <p class="chart-label">Répartition par tranche d'âge</p>
+      {% if par_age %}
+      <div class="chart-legend" id="legend-age"></div>
+      <div style="position:relative;height:230px">
+        <canvas id="c-age" role="img" aria-label="Camembert répartition par tranche d'âge">Données par tranche d'âge.</canvas>
+      </div>
+      {% else %}
+      <div class="empty"><strong>Non disponible</strong>Données par tranche d'âge non disponibles pour cette sélection.</div>
+      {% endif %}
+    </div>
+
+    {# Courbe évolution — données réelles API #}
+    <div class="chart-card chart-card--full">
+      <p class="chart-label">Évolution effectif et densité sur plusieurs années</p>
+      <div class="chart-legend">
+        <span><b style="background:#1E3A8A"></b>Effectif</span>
+        <span><b style="background:#2563EB;border:1px dashed #2563EB"></b>Densité</span>
+      </div>
+      {% if evolution %}
+      <div style="position:relative;height:220px">
+        <canvas id="c-evo" role="img" aria-label="Courbe évolution effectif et densité">Données d'évolution.</canvas>
+      </div>
+      {% else %}
+      <div class="empty"><strong>Pas de données d'évolution disponibles.</strong></div>
+      {% endif %}
+    </div>
+
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</div>
+
+{% else %}
+<div class="empty">
+  <strong>Sélectionnez vos filtres</strong>
+  Choisissez une profession, un département et une année, puis cliquez sur Afficher.
+</div>
+{% endif %}
+
+<style>
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.chart-card{background:var(--white,#fff);border:1px solid var(--border,#E2E8F0);border-radius:10px;padding:14px 16px}
+.chart-card--full{grid-column:1/-1}
+.chart-label{font-size:12px;font-weight:600;color:var(--muted,#64748B);margin-bottom:8px}
+#legend-sexe,#legend-age,.chart-legend{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px;font-size:11px;color:var(--muted,#64748B)}
+#legend-sexe span,#legend-age span,.chart-legend span{display:flex;align-items:center;gap:4px}
+#legend-sexe b,#legend-age b,.chart-legend b{width:9px;height:9px;border-radius:2px;display:inline-block;flex-shrink:0}
+@media(max-width:600px){.charts-grid{grid-template-columns:1fr}}
+</style>
+
+<script>
+  const BASE_URL = "{{ BASE_URL }}";
+</script>
+<script>
+  const RESULTATS = {{ (resultats if resultats is defined else []) | tojson }};
+</script>
+<script>
+  const EVOLUTION = {{ (evolution if evolution is defined else []) | tojson }};
+</script>
+<script>
+  const PAR_SEXE = {{ (par_sexe if par_sexe is defined else []) | tojson }};
+</script>
+<script>
+  const PAR_AGE = {{ (par_age if par_age is defined else []) | tojson }};
+</script>
+<script src="{{ url_for('static', filename='js/professionnels.js') }}"></script>
+{% endblock %}
