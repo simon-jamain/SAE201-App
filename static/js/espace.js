@@ -3,6 +3,9 @@
 (function () {
   "use strict";
 
+  /**
+   * Lit et parse un bloc JSON injecté dans le HTML.
+   */
   function lireJSON(id) {
     const el = document.getElementById(id);
     if (!el) return null;
@@ -14,6 +17,9 @@
     }
   }
 
+  /**
+   * Initialise le graphique de l'espace utilisateur avec les données lues dans la page.
+   */
   function initCourbe() {
     const rows = lireJSON("data-evolution");
     if (!rows || rows.length === 0) return;

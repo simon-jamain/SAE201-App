@@ -46,6 +46,7 @@ Base.metadata.create_all(engine)
 # ── Gestionnaires d'erreurs ───────────────────────────────────────────────
 @app.errorhandler(404)
 def page_non_trouvee(e):
+    """Retourne la page d'erreur utilisée quand l'URL demandée n'existe pas."""
     return render_template(
         "erreur.html",
         code=404,
@@ -55,6 +56,7 @@ def page_non_trouvee(e):
 
 @app.errorhandler(500)
 def erreur_serveur(e):
+    """Retourne la page d'erreur affichée en cas d'erreur serveur interne."""
     return render_template(
         "erreur.html",
         code=500,

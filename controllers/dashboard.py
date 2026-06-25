@@ -34,6 +34,7 @@ def _get_listes(session):
 
 @bp_dashboard.route("/medicaments")
 def medicaments():
+    """Affiche les indicateurs de prescriptions avec filtres de profession, territoire, année et poste."""
     session = Session()
     try:
         regions, professions, postes = _get_listes(session)
@@ -150,6 +151,7 @@ def pathologies():
 # ─────────────────────────────────────────────
 @bp_dashboard.route("/professionnels")
 def professionnels():
+    """Affiche les effectifs des professionnels de santé selon le territoire, l'année et la profession."""
     session = Session()
     try:
         regions, professions, postes = _get_listes(session)

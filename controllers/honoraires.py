@@ -85,6 +85,7 @@ def _serie_comparaison(raw):
 @bp_honoraires.route("/honoraires")
 @bp_honoraires.route("/honoraires.html")          # double route pour compatibilité avec les liens existants
 def afficher():
+    """Affiche la page honoraires avec le tableau ou la courbe selon la visualisation choisie."""
     # ── Paramètres communs ───────────────────────────────────────────────
     profession_id  = request.args.get("profession_id",  type=int)   # identifiant de la profession sélectionnée (clé primaire de ProfessionSante)
     departement_id = request.args.get("departement_id", type=int)   # identifiant du département principal (clé primaire de Departement)

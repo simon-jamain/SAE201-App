@@ -139,41 +139,6 @@
   <div class="chart-card">
     <canvas id="canvas-presc"></canvas>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const evoPresc = {{ evolution | tojson }};
-
-      const ctx = document.getElementById("canvas-presc").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: evoPresc.map(d => d.annee),
-          datasets: [{
-            label: "Montant total annuel des prescriptions (€)",
-            data: evoPresc.map(d => d.montant_total),
-            borderColor: "#1E3A8A",
-            backgroundColor: "rgba(30, 58, 138, 0.08)",
-            borderWidth: 2.5,
-            tension: 0.15,
-            fill: true,
-            pointRadius: 5,
-            pointHoverRadius: 7
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: "top" } },
-          scales: {
-            x: { title: { display: true, text: "Années disponibles (Historique)" } },
-            y: { beginAtZero: true, title: { display: true, text: "Montant Cumulé (€)" } }
-          }
-        }
-      });
-    });
-  </script>
   {% else %}
   <div class="empty"><strong>Pas de données d'évolution historique disponibles.</strong></div>
   {% endif %}
@@ -194,6 +159,10 @@
 <script>
   const RESULTATS = {{ (resultats if resultats is defined else []) | tojson }};
 </script>
+<script>
+  const EVOLUTION = {{ (evolution if evolution is defined else []) | tojson }};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/prescription.js') }}"></script>
 
 {% endblock %}

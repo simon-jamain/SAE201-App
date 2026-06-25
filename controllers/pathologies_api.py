@@ -10,6 +10,7 @@ api = AmeliAPI()
 
 
 def _annotate_pathology_labels(rows):
+    """Ajoute les libellés lisibles des régions et départements aux lignes de pathologies."""
     if not rows:
         return rows
 
