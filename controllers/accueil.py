@@ -16,8 +16,3 @@ def index():
         return render_template("accueil.html", regions=regions, professions=professions)
     finally:
         session.close()
-
-@bp_accueil.route("/presentation")
-@bp_accueil.route("/presentation.html")
-def presentation():
-    return render_template("presentation.html")
