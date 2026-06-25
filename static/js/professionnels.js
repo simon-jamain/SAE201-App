@@ -69,8 +69,7 @@ function renderPage() {
 
   tbody.innerHTML = pageRows.map(r => `
     <tr>
-      <td>${r.libelle_sexe ?? ''}</td>
-      <td>${r.libelle_classe_age ?? ''}</td>
+      <td>${r.annee ? String(r.annee).slice(0,4) : ''}</td>
       <td style="font-weight:600;">${Number(r.effectif ?? 0).toLocaleString('fr-FR')}</td>
       <td>${r.densite != null ? Number(r.densite).toFixed(2) : '—'}</td>
     </tr>
