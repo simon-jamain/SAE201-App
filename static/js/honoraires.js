@@ -25,7 +25,7 @@
   // Indications affichées selon la visualisation choisie
   const VIZ_HINTS = {
     tableau: "Requiert une profession et une année.",
-    courbe:  "Requiert une profession, une année et DEUX départements à comparer.",
+    courbe:  "Requiert une profession et DEUX départements à comparer.",
   };
 
   // ── Onglets (Type de visualisation / Filtres) ───────────────────────────
@@ -40,9 +40,12 @@
   // ── Affichage des filtres selon la visualisation ────────────────────────
   // Région, Département et les champs de comparaison ne servent qu'à la courbe.
   function majFiltresComparaison(type) {
-    const afficher = (type === "courbe");
+    const afficherComparaison = (type === "courbe");
     document.querySelectorAll(".group-comparaison").forEach(g => {
-      g.style.display = afficher ? "" : "none";
+      g.style.display = afficherComparaison ? "" : "none";
+    });
+    document.querySelectorAll(".group-annee").forEach(g => {
+      g.style.display = afficherComparaison ? "none" : "";
     });
   }
 
@@ -62,13 +65,23 @@
     majFiltresComparaison(type);
     majIndication(type);
 
-    // Si profession + année sont déjà choisies, on relance la requête pour
+    // Si les champs requis sont déjà choisis, on relance la requête pour
     // obtenir la bonne visualisation (un seul aller-retour serveur).
     const prof  = document.getElementById("profession");
     const annee = document.getElementById("annee");
+    const dept1 = document.getElementById("departement");
+    const dept2 = document.getElementById("departement_2");
     const form  = document.getElementById("form-filters");
-    if (form && prof && annee && prof.value && annee.value) {
-      form.submit();
+    if (!form || !prof || !prof.value) return;
+
+    if (type === "tableau") {
+      if (annee && annee.value) {
+        form.submit();
+      }
+    } else if (type === "courbe") {
+      if (dept1 && dept1.value && dept2 && dept2.value) {
+        form.submit();
+      }
     }
   }
 

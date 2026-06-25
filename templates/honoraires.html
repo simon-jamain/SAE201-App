@@ -64,7 +64,7 @@
         </div>
 
         {# Année #}
-        <div class="filter-group">
+        <div class="filter-group group-annee">
           <label for="annee">Année</label>
           <select id="annee" name="annee">
             <option value="">-- Choisir --</option>
@@ -146,7 +146,7 @@
 </div>
 
 {# ── Zone de résultats ─────────────────────────────────────────────────── #}
-{% if prof and annee %}
+{% if prof and (viz_type == 'courbe' or annee) %}
 <div class="results">
 
   {# ── VIZ : TABLEAU ──────────────────────────────────────────────────── #}
@@ -172,12 +172,12 @@
 
   {# ── VIZ : COURBE ───────────────────────────────────────────────────── #}
   <div id="viz-courbe" class="{% if viz_type != 'courbe' %}is-hidden{% endif %}">
-    <h2>Comparaison – {{ prof.libelle }} – {{ annee }}</h2>
+    <h2>Comparaison – {{ prof.libelle }}</h2>
     {% if chart_courbe and chart_courbe.series %}
       <canvas id="courbe-canvas"></canvas>
       <script type="application/json" id="data-courbe">{{ chart_courbe | tojson }}</script>
     {% else %}
-      <p>Sélectionnez une profession, une année et <strong>deux départements</strong>
+      <p>Sélectionnez une profession et <strong>deux départements</strong>
          pour afficher la comparaison.</p>
     {% endif %}
   </div>

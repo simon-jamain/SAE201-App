@@ -133,13 +133,13 @@ def afficher():
         dept  = None         # objet Departement correspondant à departement_id
         dept2 = None         # objet Departement correspondant à departement_id_2
 
-        if profession_id and annee:                                          # profession + année sont les paramètres minimums pour tout appel API
+        if profession_id:
             prof = session.get(ProfessionSante, profession_id)              # récupère l'objet ProfessionSante par sa clé primaire
             if not prof:
                 return render_template("erreur.html",
                     message="Profession introuvable."), 400                 # retourne HTTP 400 si l'identifiant ne correspond à aucune profession en base
 
-        if profession_id and departement_id and annee:                      # un département est requis en plus pour les visualisations qui en dépendent
+        if departement_id:
             dept = session.get(Departement, departement_id)                 # récupère l'objet Departement par sa clé primaire
             if not dept:
                 return render_template("erreur.html",
@@ -147,7 +147,8 @@ def afficher():
 
         if prof:                                                             # n'appelle l'API que si la profession a été trouvée en base
             if viz_type == "tableau":
-                classement = api.get_classement_departements(prof.libelle, annee)  # interroge l'API pour obtenir tous les départements classés par montant moyen pour cette profession et cette année
+                if annee:
+                    classement = api.get_classement_departements(prof.libelle, annee)  # interroge l'API pour obtenir tous les départements classés par montant moyen pour cette profession et cette année
 
             elif viz_type == "courbe":
                 if dept and departement_id_2:                               # la courbe nécessite obligatoirement les deux départements
