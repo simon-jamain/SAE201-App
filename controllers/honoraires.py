@@ -82,13 +82,20 @@ def _serie_comparaison(raw):
     return {"labels": annees, "series": series}  # retourne la structure directement exploitable par Chart.js
 
 
+def _get_departement_par_code(session, code):
+    """Résout un département à partir de son code métier (et non de son id SQL)."""
+    if code is None or code == "":
+        return None
+    return session.query(Departement).filter_by(code=str(code)).first()
+
+
 @bp_honoraires.route("/honoraires")
 @bp_honoraires.route("/honoraires.html")          # double route pour compatibilité avec les liens existants
 def afficher():
     """Affiche la page honoraires avec le tableau ou la courbe selon la visualisation choisie."""
     # ── Paramètres communs ───────────────────────────────────────────────
     profession_id  = request.args.get("profession_id",  type=int)   # identifiant de la profession sélectionnée (clé primaire de ProfessionSante)
-    departement_id = request.args.get("departement_id", type=int)   # identifiant du département principal (clé primaire de Departement)
+    departement_id = request.args.get("departement_id")             # code du département principal (valeur envoyée par le select)
     annee          = request.args.get("annee",          type=int)   # année sélectionnée pour le filtrage
     region_id      = request.args.get("region_id",      type=int)   # identifiant de la région principale, utilisé pour charger les départements du select
     viz_type       = request.args.get("viz_type", default="tableau", type=str)  # type de visualisation demandé ("tableau" ou "courbe"), "tableau" par défaut
@@ -96,7 +103,7 @@ def afficher():
         viz_type = "tableau"                        # si la valeur reçue est invalide (manipulation URL), on retombe sur "tableau"
 
     # ── Paramètres spécifiques à la visualisation courbe ────────────────
-    departement_id_2 = request.args.get("departement_id_2", type=int)              # identifiant du second département à comparer (courbe uniquement)
+    departement_id_2 = request.args.get("departement_id_2")                         # code du second département à comparer (courbe uniquement)
     region_id_2      = request.args.get("region_id_2",      type=int)              # identifiant de la région du second département, pour charger son select
     type_honoraires  = request.args.get("type_honoraires",
                                         default="Ensemble des honoraires", type=str)  # type d'honoraires à comparer sur la courbe, "Ensemble des honoraires" par défaut
@@ -141,10 +148,10 @@ def afficher():
                     message="Profession introuvable."), 400                 # retourne HTTP 400 si l'identifiant ne correspond à aucune profession en base
 
         if departement_id:
-            dept = session.get(Departement, departement_id)                 # récupère l'objet Departement par sa clé primaire
+            dept = _get_departement_par_code(session, departement_id)       # récupère l'objet Departement par son code métier
             if not dept:
                 return render_template("erreur.html",
-                    message="Département introuvable."), 400                # retourne HTTP 400 si l'identifiant ne correspond à aucun département en base
+                    message="Département introuvable."), 400                # retourne HTTP 400 si le code ne correspond à aucun département en base
 
         if prof:                                                             # n'appelle l'API que si la profession a été trouvée en base
             if viz_type == "tableau":
@@ -153,7 +160,7 @@ def afficher():
 
             elif viz_type == "courbe":
                 if dept and departement_id_2:                               # la courbe nécessite obligatoirement les deux départements
-                    dept2 = session.get(Departement, departement_id_2)     # récupère le second département par sa clé primaire
+                    dept2 = _get_departement_par_code(session, departement_id_2)  # récupère le second département par son code métier
                     if dept2:                                               # n'appelle l'API que si le second département existe en base
                         comparaison = api.get_evolution_comparaison(
                             prof.libelle, dept.code, dept2.code, type_honoraires  # interroge l'API pour l'évolution comparée des deux départements sur le type d'honoraires choisi
