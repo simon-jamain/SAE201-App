@@ -1,7 +1,11 @@
 const PAGE_SIZE = 15;
 let prescriptionData = [];
 let currentPage = 1;
+const prescriptionEvolution = typeof EVOLUTION !== 'undefined' ? EVOLUTION : [];
 
+/**
+ * Active un onglet de la page prescription.
+ */
 function switchTab(e, tabId) {
   document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
   document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
@@ -9,6 +13,9 @@ function switchTab(e, tabId) {
   document.getElementById(tabId).classList.add('active');
 }
 
+/**
+ * Bascule entre la vue tableau et la vue graphique pour les prescriptions.
+ */
 function switchViz(prefix, type, btn) {
   document.querySelectorAll(`#${prefix}-tab, #${prefix}-graph`).forEach(v => v.classList.remove("active"));
   document.getElementById(`${prefix}-${type}`).classList.add("active");
@@ -16,6 +23,9 @@ function switchViz(prefix, type, btn) {
   btn.classList.add("active");
 }
 
+/**
+ * Branche la cascade région -> département du formulaire de prescription.
+ */
 function setupCascade(regionId, deptId) {
   const r = document.getElementById(regionId);
   const d = document.getElementById(deptId);
@@ -42,6 +52,9 @@ function setupCascade(regionId, deptId) {
   });
 }
 
+/**
+ * Rend la page courante du tableau des prescriptions.
+ */
 function renderPage() {
   const tbody = document.getElementById("presc-tbody");
   if (!tbody) return;
@@ -77,12 +90,53 @@ function renderPage() {
   nextBtn.disabled = currentPage >= totalPages;
 }
 
+/**
+ * Charge les données de prescriptions et réinitialise la pagination.
+ */
 function initPrescriptionTable(data) {
   prescriptionData = data;
   currentPage = 1;
   renderPage();
 }
 
+/**
+ * Initialise le graphique d'évolution des prescriptions si les données existent.
+ */
+function initPrescriptionChart() {
+  if (!prescriptionEvolution.length) return;
+  const canvas = document.getElementById("canvas-presc");
+  if (!canvas || typeof Chart === "undefined") return;
+
+  const ctx = canvas.getContext("2d");
+  new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: prescriptionEvolution.map(d => d.annee),
+      datasets: [{
+        label: "Montant total annuel des prescriptions (€)",
+        data: prescriptionEvolution.map(d => d.montant_total),
+        borderColor: "#1E3A8A",
+        backgroundColor: "rgba(30, 58, 138, 0.08)",
+        borderWidth: 2.5,
+        tension: 0.15,
+        fill: true,
+        pointRadius: 5,
+        pointHoverRadius: 7
+      }]
+    },
+    options: {
+      responsive: true,
+      maintainAspectRatio: false,
+      plugins: { legend: { position: "top" } },
+      scales: {
+        x: { title: { display: true, text: "Années disponibles (Historique)" } },
+        y: { beginAtZero: true, title: { display: true, text: "Montant Cumulé (€)" } }
+      }
+    }
+  });
+}
+
+// Initialise les interactions dès que le DOM est prêt.
 document.addEventListener("DOMContentLoaded", () => {
   setupCascade("pp-region", "pp-dept");
 
@@ -96,4 +150,6 @@ document.addEventListener("DOMContentLoaded", () => {
   if (typeof RESULTATS !== 'undefined' && RESULTATS.length) {
     initPrescriptionTable(RESULTATS);
   }
+
+  initPrescriptionChart();
 });

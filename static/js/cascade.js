@@ -1,3 +1,4 @@
+// Recharge la liste des départements quand la région change.
 document.getElementById("region").addEventListener("change", async (e) => {
   const regionId  = e.target.value;
   const selectDept = document.getElementById("departement");

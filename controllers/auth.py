@@ -37,6 +37,7 @@ def login_required(vue):
 # ── Connexion ────────────────────────────────────────────────────────────────
 @bp_auth.route("/connexion", methods=["GET", "POST"])  # accepte les méthodes GET (affichage) et POST (soumission du formulaire)
 def connexion():
+    """Affiche le formulaire de connexion et traite l'authentification."""
     erreur = None                                    # initialise la variable d'erreur à None (aucune erreur par défaut)
     if request.method == "POST":                     # si le formulaire a été soumis
         identifiant  = request.form.get("identifiant", "").strip()   # récupère l'identifiant saisi, supprime les espaces autour
@@ -59,6 +60,7 @@ def connexion():
 # ── Création de compte ───────────────────────────────────────────────────────
 @bp_auth.route("/creer-compte", methods=["GET", "POST"])  # accepte GET (affichage) et POST (soumission)
 def creer_compte():
+    """Affiche le formulaire de création de compte et enregistre un utilisateur."""
     erreur = None                                    # initialise la variable d'erreur à None
     if request.method == "POST":                     # si le formulaire a été soumis
         identifiant  = request.form.get("identifiant", "").strip()   # récupère et nettoie l'identifiant
@@ -87,6 +89,7 @@ def creer_compte():
 # ── Déconnexion ──────────────────────────────────────────────────────────────
 @bp_auth.route("/deconnexion")
 def deconnexion():
+    """Déconnecte l'utilisateur courant en supprimant la session Flask."""
     flask_session.pop("utilisateur", None)           # supprime la clé "utilisateur" de la session Flask (None évite une KeyError si absente)
     return redirect("/")                             # redirige vers la page d'accueil
 
@@ -95,6 +98,7 @@ def deconnexion():
 @bp_auth.route("/espace")
 @login_required                                      # applique le décorateur : redirige vers /connexion si aucun utilisateur en session
 def espace():
+    """Affiche l'espace privé avec les données grippales filtrées par département et tranche d'âge."""
     departement_id = request.args.get("departement_id", "").strip()              # récupère le code département depuis l'URL (paramètre optionnel)
     classe_age     = request.args.get("classe_age", default="Tous âges", type=str)  # récupère la classe d'âge depuis l'URL, "Tous âges" par défaut
     if classe_age not in GrippeAPI.CLASSES_AGE:      # vérifie que la classe d'âge reçue fait partie des valeurs autorisées

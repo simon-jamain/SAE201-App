@@ -349,11 +349,6 @@ footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; 
 .map-range { text-align: center; font-size: 0.8rem; color: #6b7280; margin-top: 8px; }
 .map-note { font-size: 0.8rem; color: #9ca3af; text-align: center; margin-top: 16px; }
 
-/* ═══════════════════════════════════════════════════════════════════════
-   AUTHENTIFICATION (fusionné depuis auth.css)
-   Zone de connexion (header) + pages connexion / création de compte
-   ═══════════════════════════════════════════════════════════════════════ */
-
 /* ── Zone connexion dans le header ── */
 .header-auth        { margin-left: auto; display: flex; align-items: center; gap: 14px; }
 .header-user        { font-size: .875rem; opacity: .9; }
@@ -397,10 +392,6 @@ footer { max-width: 1200px; margin: 0 auto; padding: 24px 16px; color: #6b7280; 
 .auth-switch a { color: #1e40af; font-weight: 600; text-decoration: none; }
 .auth-switch a:hover { text-decoration: underline; }
 
-
-/* ═══════════════════════════════════════════════════════════════════════
-   HONORAIRES (fusionné depuis honoraires.css)
-   ═══════════════════════════════════════════════════════════════════════ */
 
 .page-title  { font-size: 2rem; margin-bottom: 24px; }
 .viz-hint    { font-size: .8rem; color: #6b7280; margin: 12px 0 0; text-align: center; }

@@ -61,6 +61,7 @@ class AmeliAPI:
     # ── Effectifs totaux ───────────────────────────────────────────────────
 
     def get_effectifs(self, profession, departement_code, annee):
+        """Récupère les effectifs totaux pour une profession, un département et une année donnés."""
         where = (
             f'profession_sante="{profession}" AND '
             f'departement="{departement_code}" AND '
@@ -94,6 +95,7 @@ class AmeliAPI:
     # ── Effectifs par SEXE ─────────────────────────────────────────────────
 
     def get_effectifs_par_sexe(self, profession, departement_code, annee, region_code=None):
+        """Récupère la répartition des effectifs par sexe pour une année donnée."""
         if departement_code:
             territoire = f'departement="{departement_code}"'
         else:
@@ -113,6 +115,7 @@ class AmeliAPI:
     # ── Effectifs par TRANCHE D'ÂGE ───────────────────────────────────────
 
     def get_effectifs_par_age(self, profession, departement_code, annee, region_code=None):
+        """Récupère la répartition des effectifs par tranche d'âge pour une année donnée."""
         if departement_code:
             territoire = f'departement="{departement_code}"'
         else:
@@ -134,6 +137,7 @@ class AmeliAPI:
     # Champ territoire : "code_departement" (pas "departement")
 
     def get_exercices(self, profession, departement_code, annee, region_code=None):
+        """Récupère le nombre d'exercices libéraux pour une profession et un territoire donnés."""
         if departement_code:
             territoire = f'code_departement="{departement_code}"'
         else:
@@ -150,6 +154,7 @@ class AmeliAPI:
         )
 
     def get_evolution_exercices(self, profession, departement_code, region_code=None):
+        """Récupère l'évolution annuelle des exercices libéraux pour une profession et un territoire."""
         if departement_code:
             territoire = f'code_departement="{departement_code}"'
         else:
@@ -417,6 +422,7 @@ class AmeliAPI:
     # ── Médicaments & Actes (Open Medic / Open Damir) ──────────────────────
 
     def get_medicaments(self, annee, poste_id=None, limit=50):
+        """Retourne actuellement une liste vide pour éviter de casser la page prescriptions."""
         # On interroge le catalogue global pour voir les vrais IDs disponibles
         url_catalogue = "https://data.ameli.fr/api/explore/v2.1/catalog/datasets?where=prescriptions&limit=10"
         try:

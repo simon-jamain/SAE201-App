@@ -139,41 +139,6 @@
   <div class="chart-card">
     <canvas id="canvas-presc"></canvas>
   </div>
-
-  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-  <script>
-    document.addEventListener("DOMContentLoaded", function() {
-      const evoPresc = {{ evolution | tojson }};
-
-      const ctx = document.getElementById("canvas-presc").getContext("2d");
-      new Chart(ctx, {
-        type: "line",
-        data: {
-          labels: evoPresc.map(d => d.annee),
-          datasets: [{
-            label: "Montant total annuel des prescriptions (€)",
-            data: evoPresc.map(d => d.montant_total),
-            borderColor: "#1E3A8A",
-            backgroundColor: "rgba(30, 58, 138, 0.08)",
-            borderWidth: 2.5,
-            tension: 0.15,
-            fill: true,
-            pointRadius: 5,
-            pointHoverRadius: 7
-          }]
-        },
-        options: {
-          responsive: true,
-          maintainAspectRatio: false,
-          plugins: { legend: { position: "top" } },
-          scales: {
-            x: { title: { display: true, text: "Années disponibles (Historique)" } },
-            y: { beginAtZero: true, title: { display: true, text: "Montant Cumulé (€)" } }
-          }
-        }
-      });
-    });
-  </script>
   {% else %}
   <div class="empty"><strong>Pas de données d'évolution historique disponibles.</strong></div>
   {% endif %}
@@ -189,53 +154,15 @@
 
 <script>
   const BASE_URL = "{{ BASE_URL }}";
-
-  function switchTab(e, tabId) {
-    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-    document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-    e.currentTarget.classList.add('active');
-    document.getElementById(tabId).classList.add('active');
-  }
-
-  function setupCascade(regionId, deptId) {
-    const r = document.getElementById(regionId);
-    const d = document.getElementById(deptId);
-    if (!r || !d) return;
-
-    r.addEventListener("change", async (e) => {
-      const id = e.target.value;
-      d.innerHTML = '<option value="">— Tous les départements —</option>';
-      if (!id) return;
-      try {
-        const res = await fetch(`${BASE_URL}/api/departements/${id}`);
-        if (!res.ok) throw new Error("Erreur de récupération");
-        const depts = await res.json();
-        depts.forEach(dept => {
-          const o = document.createElement("option");
-          o.value = dept.id;
-          o.textContent = `${dept.code} – ${dept.libelle}`;
-          d.appendChild(o);
-        });
-      } catch (err) {
-        console.error("Erreur cascade :", err);
-        d.innerHTML = '<option value="">Erreur de chargement</option>';
-      }
-    });
-  }
-
-  setupCascade("pp-region", "pp-dept");
-
-  function switchViz(prefix, type, btn) {
-    document.querySelectorAll(`#${prefix}-tab, #${prefix}-graph`).forEach(v => v.classList.remove("active"));
-    document.getElementById(`${prefix}-${type}`).classList.add("active");
-    btn.closest(".viz-switcher").querySelectorAll(".viz-btn").forEach(b => b.classList.remove("active"));
-    btn.classList.add("active");
-  }
 </script>
 
 <script>
   const RESULTATS = {{ (resultats if resultats is defined else []) | tojson }};
 </script>
+<script>
+  const EVOLUTION = {{ (evolution if evolution is defined else []) | tojson }};
+</script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script src="{{ url_for('static', filename='js/prescription.js') }}"></script>
 
 {% endblock %}

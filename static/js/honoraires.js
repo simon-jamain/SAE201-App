@@ -7,6 +7,9 @@
   "use strict";
 
   // ── Lecture d'un îlot de données JSON injecté par le serveur ─────────────
+  /**
+   * Lit et parse un bloc JSON injecté par Flask dans le template.
+   */
   function lireJSON(id) {
     const el = document.getElementById(id);
     if (!el) return null;
@@ -29,6 +32,9 @@
   };
 
   // ── Onglets (Type de visualisation / Filtres) ───────────────────────────
+  /**
+   * Active un onglet et masque les autres panneaux associés.
+   */
   function switchTab(btn, tabId) {
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
     document.querySelectorAll(".tab-content").forEach(c => c.classList.remove("active"));
@@ -39,6 +45,9 @@
 
   // ── Affichage des filtres selon la visualisation ────────────────────────
   // Région, Département et les champs de comparaison ne servent qu'à la courbe.
+  /**
+   * Affiche ou masque les champs de comparaison selon le mode choisi.
+   */
   function majFiltresComparaison(type) {
     const afficherComparaison = (type === "courbe");
     document.querySelectorAll(".group-comparaison").forEach(g => {
@@ -49,12 +58,18 @@
     });
   }
 
+  /**
+   * Met à jour le texte d'aide visible sous le sélecteur de visualisation.
+   */
   function majIndication(type) {
     const hint = document.getElementById("viz-hint");
     if (hint) hint.textContent = VIZ_HINTS[type] || "";
   }
 
   // ── Choix de la visualisation ───────────────────────────────────────────
+  /**
+   * Bascule la visualisation active et resoumet le formulaire si possible.
+   */
   function setViz(btn, type) {
     const input = document.getElementById("viz_type_input");
     if (input) input.value = type;
@@ -86,6 +101,9 @@
   }
 
   // ── Cascade région → département (générique : une fonction, deux usages) ──
+  /**
+   * Branche un sélecteur de région sur un sélecteur de département.
+   */
   function brancherCascade(idRegion, idDept) {
     const selRegion = document.getElementById(idRegion);
     const selDept   = document.getElementById(idDept);
@@ -111,6 +129,9 @@
   }
 
   // ── Tableau du classement : pagination (10 lignes par page) ─────────────
+  /**
+   * Initialise la pagination du tableau de classement.
+   */
   function initClassement() {
     const rows = lireJSON("data-classement");
     if (!rows) return;
@@ -131,6 +152,9 @@
     const totalPages = Math.max(1, Math.ceil(rows.length / perPage));
     let currentPage = 1;
 
+    /**
+     * Rend une page précise du classement.
+     */
     function renderPage(p) {
       currentPage = Math.min(Math.max(1, p), totalPages);
       const start = (currentPage - 1) * perPage;
@@ -166,6 +190,9 @@
   }
 
   // ── Graphique courbe (comparaison de deux départements) ─────────────────
+  /**
+   * Initialise le graphique de comparaison des honoraires.
+   */
   function initCourbe() {
     const cfg = lireJSON("data-courbe");
     if (!cfg || !cfg.series) return;
@@ -193,6 +220,9 @@
   }
 
   // ── Initialisation ───────────────────────────────────────────────────────
+  /**
+   * Branche les événements de la page Honoraires et lance les modules actifs.
+   */
   function init() {
     // Onglets : remplace les anciens onclick="switchTab(...)"
     document.querySelectorAll("[data-tab]").forEach(btn => {
