@@ -41,7 +41,12 @@ async function fetchRegions() {
     console.error('Impossible de charger la liste des régions', resp.statusText);
     return [];
   }
-  return await resp.json();
+  // Double sécurité côté client : si l'API renvoie encore France, on la retire ici.
+  return (await resp.json()).filter(region => {
+    const code = String(region.code || '').trim();
+    const label = String(region.libelle || '').trim().toLowerCase();
+    return code !== '999' && label !== 'france';
+  });
 }
 
 async function fetchDepartments(region) {

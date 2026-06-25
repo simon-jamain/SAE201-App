@@ -7,6 +7,9 @@ from services.ameli_api import AmeliAPI
 bp_dashboard = Blueprint("dashboard", __name__)
 api = AmeliAPI()  # Instance unique du client API Ameli
 
+FRANCE_REGION_CODE = "999"
+FRANCE_REGION_LABEL = "france"
+
 # Mots-clés permettant d'identifier si une profession est médicale (médecin)
 MOTS_MEDECIN = ["médecin", "généraliste", "generaliste", "cardiologue",
                 "dermatologue", "gynécologue", "ophtalmologue", "pédiatre",
@@ -34,7 +37,12 @@ def _get_listes(session):
     Charge depuis la base les listes de référence nécessaires aux filtres
     des formulaires (régions, professions, postes de prescription).
     """
-    regions     = session.query(Region).order_by(Region.libelle).all()
+    # On retire l'entrée agrégée "France" pour ne garder que les vraies régions utilisables.
+    regions     = [
+        region for region in session.query(Region).order_by(Region.libelle).all()
+        if str(region.code).strip() != FRANCE_REGION_CODE
+        and str(region.libelle).strip().lower() != FRANCE_REGION_LABEL
+    ]
     professions = session.query(ProfessionSante).order_by(ProfessionSante.libelle).all()
     postes      = session.query(PostePrescription).order_by(PostePrescription.id).all()
     return regions, professions, postes

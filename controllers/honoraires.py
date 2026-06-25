@@ -135,7 +135,6 @@ def afficher():
 
         # ── Données API : uniquement la visualisation demandée ────────────
         classement   = []    # résultats du tableau : liste des départements classés par montant moyen
-        comparaison  = []    # résultats bruts de la courbe : enregistrements retournés par l'API
         chart_courbe = None  # données mises en forme pour Chart.js ({labels, series}), None si la courbe n'est pas demandée
         prof  = None         # objet ProfessionSante correspondant à profession_id
         dept  = None         # objet Departement correspondant à departement_id
@@ -162,10 +161,12 @@ def afficher():
                 if dept and departement_id_2:                               # la courbe nécessite obligatoirement les deux départements
                     dept2 = _get_departement_par_code(session, departement_id_2)  # récupère le second département par son code métier
                     if dept2:                                               # n'appelle l'API que si le second département existe en base
-                        comparaison = api.get_evolution_comparaison(
-                            prof.libelle, dept.code, dept2.code, type_honoraires  # interroge l'API pour l'évolution comparée des deux départements sur le type d'honoraires choisi
+                        # Construit directement les données exploitables par Chart.js à partir de l'API.
+                        chart_courbe = _serie_comparaison(
+                            api.get_evolution_comparaison(
+                                prof.libelle, dept.code, dept2.code, type_honoraires  # interroge l'API pour l'évolution comparée des deux départements sur le type d'honoraires choisi
+                            )
                         )
-                        chart_courbe = _serie_comparaison(comparaison)     # transforme les données brutes en structure {labels, series} prête pour Chart.js
 
         return render_template(
             "honoraires.html",
@@ -191,7 +192,6 @@ def afficher():
             dept2=dept2,                             # objet Departement secondaire sélectionné (courbe uniquement)
             # Données API
             classement=classement,                   # liste des départements classés par montant moyen (tableau uniquement)
-            comparaison=comparaison,                 # données brutes de l'API (courbe uniquement)
             # Données prêtes pour Chart.js (mises en forme côté contrôleur)
             chart_courbe=chart_courbe,               # dictionnaire {labels, series} injecté en JSON dans le template pour être lu par honoraires.js
         )

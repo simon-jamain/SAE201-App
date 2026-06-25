@@ -5,6 +5,8 @@ from services.ameli_api import AmeliAPI
 
 bp_pathologies_api = Blueprint("pathologies_api", __name__, url_prefix="/api")
 
+FRANCE_REGION_CODE = "999"
+
 # Instance unique du service API (r├®utilise la session HTTP)
 api = AmeliAPI()
 
@@ -13,6 +15,8 @@ def _annotate_pathology_labels(rows):
     """Ajoute les libellés lisibles des régions et départements aux lignes de pathologies."""
     if not rows:
         return rows
+
+    rows = [row for row in rows if row.get("region") != FRANCE_REGION_CODE]
 
     session = Session()
     try:

@@ -5,6 +5,9 @@ from services.ameli_api import AmeliAPI
 
 bp_api = Blueprint("api", __name__, url_prefix="/api")
 
+FRANCE_REGION_CODE = "999"
+FRANCE_REGION_LABEL = "france"
+
 # Instance unique du service API (réutilise la session HTTP)
 api = AmeliAPI()
 
@@ -14,7 +17,12 @@ def regions():
     """Retourne la liste des régions au format JSON."""
     session = Session()
     try:
-        regions = session.query(Region).order_by(Region.code).all()
+        # AMELI expose aussi une entrée agrégée "France" qu'on ne veut pas proposer dans les sélecteurs.
+        regions = [
+            region for region in session.query(Region).order_by(Region.code).all()
+            if str(region.code).strip() != FRANCE_REGION_CODE
+            and str(region.libelle).strip().lower() != FRANCE_REGION_LABEL
+        ]
         return jsonify([
             {"id": r.id, "code": r.code, "libelle": r.libelle}
             for r in regions
