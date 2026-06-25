@@ -40,6 +40,18 @@ def _get_listes(session):
     return regions, professions, postes
 
 
+def _get_departements_par_region(session, region_id):
+    """Charge les départements d'une région pour pré-remplir le formulaire."""
+    if not region_id:
+        return []
+    return (
+        session.query(Departement)
+        .filter_by(region_id=region_id)
+        .order_by(Departement.code)
+        .all()
+    )
+
+
 def _filtrer_professions_prescription(professions):
     """Retire les catégories de professions non pertinentes pour la prescription."""
     return [p for p in professions if p.libelle not in PROFESSIONS_PRESCRIPTION_EXCLUES]
@@ -177,15 +189,24 @@ def professionnels():
         region_id      = request.args.get("region_id",      type=int)
         annee          = request.args.get("annee",           type=int)
 
+        # Résolution anticipée pour pouvoir réafficher les filtres tels qu'ils ont été choisis
+        prof = session.get(ProfessionSante, profession_id) if profession_id else None
+        dept = session.get(Departement, departement_id) if departement_id else None
+        reg  = session.get(Region,      region_id)      if region_id      else (dept.region if dept else None)
+
+        if not region_id and dept and dept.region_id:
+            region_id = dept.region_id
+
+        departements = _get_departements_par_region(session, region_id)
+
         # Formulaire vide si profession + année + territoire ne sont pas tous renseignés
         if not all([profession_id, annee]) or not (departement_id or region_id):
             return render_template("professionnels.html",
-                                   regions=regions, professions=professions)
-
-        # Résolution des entités
-        prof = session.get(ProfessionSante, profession_id)
-        dept = session.get(Departement, departement_id) if departement_id else None
-        reg  = session.get(Region,      region_id)      if region_id      else None
+                                   regions=regions, professions=professions,
+                                   reg=reg, dept=dept,
+                                   region_id=region_id, departement_id=departement_id,
+                                   departements=departements,
+                                   annee=annee)
 
         if not prof:
             return render_template("erreur.html", code=400, message="Paramètres invalides."), 400
@@ -210,6 +231,9 @@ def professionnels():
                                prof=prof, dept=dept, reg=reg,
                                territoire_label=territoire_label,
                                annee=annee,
+                               region_id=region_id,
+                               departement_id=departement_id,
+                               departements=departements,
                                resultats=resultats or [],
                                evolution=evolution or [],
                                par_sexe=par_sexe or [],

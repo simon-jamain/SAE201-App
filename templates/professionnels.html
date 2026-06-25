@@ -43,6 +43,9 @@
           <label>Département</label>
           <select name="departement_id" id="pf-dept">
             <option value="">— Tous les départements —</option>
+            {% for d in departements %}
+            <option value="{{ d.id }}" {% if dept and dept.id == d.id %}selected{% endif %}>{{ d.code }} – {{ d.libelle }}</option>
+            {% endfor %}
           </select>
         </div>
         <div class="filter-group">
@@ -139,76 +142,6 @@
   </div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
-  <script>
-    const parSexe = {{ par_sexe | tojson }};
-    const parAge  = {{ par_age  | tojson }};
-    const evo     = {{ evolution | tojson }};
-    const BLUES = ['#1E3A8A','#10B981','#F59E0B','#EF4444','#8B5CF6','#06B6D4','#EC4899','#84CC16'];
-    const no = {responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}}};
-
-    // ── Anneau par sexe ──
-    if (parSexe.length > 0) {
-      const sexeLabels = parSexe.map(r => r.libelle_sexe || '');
-      const sexeVals   = parSexe.map(r => parseInt(r.effectif) || 0);
-      const legSexe = document.getElementById('legend-sexe');
-      if (legSexe) sexeLabels.forEach((l,i) => {
-        const s = document.createElement('span');
-        s.innerHTML = `<b style="background:${BLUES[i]}"></b>${l}`;
-        legSexe.appendChild(s);
-      });
-      new Chart(document.getElementById('c-sexe'), {
-        type: 'doughnut',
-        data: {labels:sexeLabels, datasets:[{data:sexeVals, backgroundColor:BLUES, borderWidth:2, borderColor:'#fff'}]},
-        options: {...no, cutout:'65%', plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:c=>' '+c.label+' : '+c.parsed.toLocaleString('fr-FR')}}}}
-      });
-    }
-
-    // ── Camembert par tranche d'âge ──
-    if (parAge.length > 0) {
-      const ageLabels = parAge.map(r => r.libelle_classe_age || '');
-      const ageVals   = parAge.map(r => parseInt(r.effectif) || 0);
-      const legAge = document.getElementById('legend-age');
-      if (legAge) ageLabels.forEach((l,i) => {
-        const s = document.createElement('span');
-        s.innerHTML = `<b style="background:${BLUES[i%BLUES.length]}"></b>${l}`;
-        legAge.appendChild(s);
-      });
-      new Chart(document.getElementById('c-age'), {
-        type: 'pie',
-        data: {labels:ageLabels, datasets:[{data:ageVals, backgroundColor:BLUES, borderWidth:2, borderColor:'#fff'}]},
-        options: {...no, plugins:{legend:{display:false},
-          tooltip:{callbacks:{label:c=>' '+c.label+' : '+c.parsed.toLocaleString('fr-FR')}}}}
-      });
-    }
-
-    // ── Courbe évolution ──
-    if (evo.length > 0) {
-      const years = evo.map(d => d.annee ? String(d.annee).slice(0,4) : '');
-      const effs  = evo.map(d => parseInt(d.effectif)  || 0);
-      const dens  = evo.map(d => parseFloat(d.densite) || 0);
-      new Chart(document.getElementById('c-evo'), {
-        type: 'line',
-        data: {
-          labels: years,
-          datasets: [
-            {label:'Effectif', data:effs, borderColor:'#1E3A8A', backgroundColor:'rgba(30,58,138,.07)',
-             tension:.35, fill:true, pointRadius:4, yAxisID:'y'},
-            {label:'Densité',  data:dens, borderColor:'#2563EB', backgroundColor:'rgba(37,99,235,.07)',
-             tension:.35, fill:true, pointRadius:4, borderDash:[5,4], yAxisID:'y1'}
-          ]
-        },
-        options: {
-          responsive:true, maintainAspectRatio:false,
-          plugins:{legend:{display:false}},
-          scales:{
-            y: {position:'left',  beginAtZero:false, title:{display:true,text:'Effectif',font:{size:11}}},
-            y1:{position:'right', beginAtZero:false, grid:{drawOnChartArea:false}, title:{display:true,text:'Densité',font:{size:11}}}
-          }
-        }
-      });
-    }
-  </script>
 </div>
 
 {% else %}

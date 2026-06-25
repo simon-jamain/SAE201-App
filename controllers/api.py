@@ -35,7 +35,7 @@ def departements(region_id):
             .all()
         )
         return jsonify([
-            {"id": d.code, "code": d.code, "libelle": d.libelle}
+            {"id": d.id, "code": d.code, "libelle": d.libelle}
             for d in depts
         ])
     finally:
