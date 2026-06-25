@@ -14,6 +14,15 @@ MOTS_MEDECIN = ["médecin", "généraliste", "generaliste", "cardiologue",
                 "rhumatologue", "urologue", "gastroentérologue", "anesthésiste",
                 "endocrinologue", "pneumologue", "néphrologue"]
 
+PROFESSIONS_PRESCRIPTION_EXCLUES = {
+    "Autres médecins",
+    "Ensemble des auxiliaires médicaux",
+    "Ensemble des chirurgiens-dentistes",
+    "Ensemble des médecins",
+    "Ensemble des médecins généralistes",
+    "Ensemble des médecins spécialistes (hors généralistes)",
+}
+
 
 def _est_medecin(libelle):
     """Retourne True si le libellé de profession contient un mot-clé médical."""
@@ -30,6 +39,11 @@ def _get_listes(session):
     postes      = session.query(PostePrescription).order_by(PostePrescription.id).all()
     return regions, professions, postes
 
+
+def _filtrer_professions_prescription(professions):
+    """Retire les catégories de professions non pertinentes pour la prescription."""
+    return [p for p in professions if p.libelle not in PROFESSIONS_PRESCRIPTION_EXCLUES]
+
 #  Route : /medicaments
 
 @bp_dashboard.route("/medicaments")
@@ -38,6 +52,7 @@ def medicaments():
     session = Session()
     try:
         regions, professions, postes = _get_listes(session)
+        professions = _filtrer_professions_prescription(professions)
 
         # Récupération des paramètres de filtrage passés en query string
         profession_id  = request.args.get("profession_id",  type=int)
